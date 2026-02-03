@@ -369,66 +369,66 @@ function displayResults(data) {
             const posted = opp.postedDate ? formatDate(opp.postedDate) : '-';
 
             html += `
-                <div class="opportunity-card" data-index="${index}" style="display: flex; flex-direction: row; background: #fff; border: 2px solid #e9ecef; border-radius: 12px; min-height: 200px;">
-                    <div class="opportunity-content" style="flex: 1; padding: 20px;">
-                        <div class="opportunity-header" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 8px;">
-                            <h3 class="opportunity-title" style="font-size: 16px; font-weight: 600; color: #333; margin: 0;">${escapeHtml(opp.title || 'Untitled')}</h3>
+                <div class="opportunity-card" data-index="${index}" style="display: flex; flex-direction: row; background: #fff; border: 2px solid #e9ecef; border-radius: 12px;">
+                    <div class="opportunity-content" style="flex: 1; padding: 25px;">
+                        <div class="opportunity-header" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 10px;">
+                            <h3 class="opportunity-title" style="font-size: 18px; font-weight: 600; color: #333; margin: 0; line-height: 1.3;">${escapeHtml(opp.title || 'Untitled')}</h3>
                             ${opp.typeOfSetAside
-                                ? `<span class="set-aside-badge" style="background: #e7f3ff; color: #0066cc; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">${escapeHtml(opp.typeOfSetAside)}</span>`
-                                : '<span class="set-aside-badge open" style="background: #d4edda; color: #28a745; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">Open</span>'}
+                                ? `<span class="set-aside-badge" style="background: #e7f3ff; color: #0066cc; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;">${escapeHtml(opp.typeOfSetAside)}</span>`
+                                : '<span class="set-aside-badge open" style="background: #d4edda; color: #28a745; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;">Open</span>'}
                         </div>
-                        ${opp.solicitationNumber ? `<div class="opportunity-solicitation" style="font-size: 13px; color: #6c757d; margin-bottom: 12px;">${escapeHtml(opp.solicitationNumber)}</div>` : ''}
+                        ${opp.solicitationNumber ? `<div class="opportunity-solicitation" style="font-size: 14px; color: #6c757d; margin-bottom: 15px;">${escapeHtml(opp.solicitationNumber)}</div>` : ''}
 
-                        <div class="opportunity-details" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 20px; margin: 12px 0;">
-                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Type:</span>
+                        <div class="opportunity-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 30px; margin: 15px 0;">
+                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Type:</span>
                                 <span class="detail-value" style="color: #333;">${escapeHtml(opp.type || opp.baseType || '-')}</span>
                             </div>
-                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">NAICS:</span>
+                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">NAICS:</span>
                                 <span class="detail-value" style="color: #333;">${escapeHtml(opp.naicsCodes || '-')}</span>
                             </div>
-                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">PSC:</span>
+                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">PSC:</span>
                                 <span class="detail-value" style="color: #333;">${escapeHtml(opp.pscCode || '-')}</span>
                             </div>
-                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Location:</span>
+                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Location:</span>
                                 <span class="detail-value" style="color: #333;">${escapeHtml(opp.popZIP || '-')}</span>
                             </div>
-                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Posted:</span>
+                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Posted:</span>
                                 <span class="detail-value" style="color: #333;">${posted}</span>
                             </div>
-                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Deadline:</span>
+                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Deadline:</span>
                                 <span class="detail-value" style="color: #dc3545; font-weight: 600;">${deadline}</span>
                             </div>
-                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Agency:</span>
+                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5; grid-column: span 2;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Agency:</span>
                                 <span class="detail-value" style="color: #333;">${escapeHtml(opp.fullParentPathName || '-')}</span>
                             </div>
                             ${opp.pocFullName ? `
-                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Contact:</span>
+                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5; grid-column: span 2;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Contact:</span>
                                 <span class="detail-value" style="color: #333;">
                                     ${escapeHtml(opp.pocFullName)}
-                                    ${opp.pocEmail ? `<br><a href="mailto:${escapeHtml(opp.pocEmail)}" style="color: #667eea;">${escapeHtml(opp.pocEmail)}</a>` : ''}
-                                    ${opp.pocPhone ? `<br>${escapeHtml(opp.pocPhone)}` : ''}
+                                    ${opp.pocEmail ? ` · <a href="mailto:${escapeHtml(opp.pocEmail)}" style="color: #667eea;">${escapeHtml(opp.pocEmail)}</a>` : ''}
+                                    ${opp.pocPhone ? ` · ${escapeHtml(opp.pocPhone)}` : ''}
                                 </span>
                             </div>
                             ` : ''}
                         </div>
 
-                        ${opp.uiLink ? `<a href="${escapeHtml(opp.uiLink)}" target="_blank" class="view-link" style="display: inline-block; color: #667eea; font-size: 13px; font-weight: 500; text-decoration: none; margin-top: 5px;">View on SAM.gov →</a>` : ''}
+                        ${opp.uiLink ? `<a href="${escapeHtml(opp.uiLink)}" target="_blank" class="view-link" style="display: inline-block; color: #667eea; font-size: 14px; font-weight: 600; text-decoration: none; margin-top: 10px;">View on SAM.gov →</a>` : ''}
                     </div>
 
-                    <div class="opportunity-actions" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 2px solid #e9ecef; min-width: 160px; gap: 12px;">
+                    <div class="opportunity-actions" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 2px solid #e9ecef; min-width: 180px; gap: 15px;">
                         <div class="score-display" id="score-${index}" style="text-align: center;">
-                            <span class="score-label" style="display: block; font-size: 11px; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Match Score</span>
-                            <span class="score-value" style="display: block; font-size: 28px; font-weight: 700; color: #adb5bd;">--</span>
+                            <span class="score-label" style="display: block; font-size: 12px; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Match Score</span>
+                            <span class="score-value" style="display: block; font-size: 36px; font-weight: 700; color: #adb5bd;">--</span>
                         </div>
-                        <button type="button" class="btn-calculate-score" onclick="calculateMatchScore(${index})" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+                        <button type="button" class="btn-calculate-score" onclick="calculateMatchScore(${index})" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;">
                             📊 Calculate Score
                         </button>
                     </div>

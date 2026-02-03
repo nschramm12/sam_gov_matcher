@@ -388,10 +388,7 @@ footer {
 .opportunities-cards {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    max-height: 600px;
-    overflow-y: auto;
-    padding-right: 5px;
+    gap: 20px;
 }
 
 .opportunity-card {
@@ -402,7 +399,6 @@ footer {
     border-radius: 12px;
     overflow: visible;
     transition: all 0.3s ease;
-    min-height: 180px;
 }
 
 .opportunity-card:hover {
@@ -412,7 +408,7 @@ footer {
 
 .opportunity-content {
     flex: 1 1 auto;
-    padding: 20px;
+    padding: 25px;
     display: block;
 }
 
@@ -426,7 +422,7 @@ footer {
 }
 
 .opportunity-title {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 600;
     color: #333;
     margin: 0;
@@ -457,22 +453,22 @@ footer {
 .opportunity-details {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px 20px;
-    margin-bottom: 12px;
-    margin-top: 12px;
+    gap: 12px 30px;
+    margin-bottom: 15px;
+    margin-top: 15px;
 }
 
 .detail-row {
     display: flex;
-    gap: 8px;
-    font-size: 13px;
-    line-height: 1.4;
+    gap: 10px;
+    font-size: 14px;
+    line-height: 1.5;
 }
 
 .detail-label {
     color: #6c757d;
-    font-weight: 500;
-    min-width: 70px;
+    font-weight: 600;
+    min-width: 80px;
 }
 
 .detail-value {
@@ -512,12 +508,12 @@ footer {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 30px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-left: 2px solid #e9ecef;
-    min-width: 160px;
+    min-width: 180px;
     flex-shrink: 0;
-    gap: 12px;
+    gap: 15px;
 }
 
 .score-display {
@@ -526,16 +522,16 @@ footer {
 
 .score-label {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     color: #6c757d;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
 }
 
 .score-value {
     display: block;
-    font-size: 28px;
+    font-size: 36px;
     font-weight: 700;
     color: #adb5bd;
 }
@@ -560,9 +556,9 @@ footer {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-size: 13px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
