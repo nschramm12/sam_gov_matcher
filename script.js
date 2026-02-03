@@ -85,17 +85,14 @@ const DEFAULTS = {
 // Update all slider displays
 minDaysSlider.addEventListener('input', (e) => {
     minDaysValue.textContent = e.target.value;
-    updateImpactPreview();
 });
 
 maxDistanceSlider.addEventListener('input', (e) => {
     maxDistanceValue.textContent = e.target.value.toLocaleString();
-    updateImpactPreview();
 });
 
 minValueSlider.addEventListener('input', (e) => {
     minValueDisplay.textContent = parseInt(e.target.value).toLocaleString();
-    updateImpactPreview();
 });
 
 bidComfortSlider.addEventListener('input', (e) => {
@@ -136,9 +133,6 @@ resetBtn.addEventListener('click', () => {
     
     // Reset special request
     document.getElementById('specialRequest').value = DEFAULTS.special_request;
-    
-    // Update preview
-    updateImpactPreview();
     
     // Hide results
     resultsSection.classList.add('hidden');
@@ -219,53 +213,6 @@ function loadSearchSettings(data) {
     
     // Update preview
     updateImpactPreview();
-}
-
-// Update impact preview based on current settings
-function updateImpactPreview() {
-    const minDays = parseInt(minDaysSlider.value);
-    const maxDistance = parseInt(maxDistanceSlider.value);
-    const minValue = parseInt(minValueSlider.value);
-    
-    // Estimate opportunities based on filters
-    let estimatedOpps = 89; // Base number
-    
-    // Adjust for deadline
-    if (minDays >= 14) estimatedOpps *= 0.3;
-    else if (minDays >= 7) estimatedOpps *= 0.6;
-    else if (minDays >= 3) estimatedOpps *= 0.8;
-    
-    // Adjust for set-asides
-    const setAsideCount = document.querySelectorAll('input[name="set_aside"]:checked').length;
-    estimatedOpps *= Math.min(setAsideCount / 2, 1.2);
-    
-    // Adjust for location requirement
-    const requireLocation = document.getElementById('requireLocation').checked;
-    if (requireLocation) estimatedOpps *= 0.7;
-    
-    // Adjust for awarded inclusion
-    const includeAwarded = document.getElementById('includeAwarded').checked;
-    if (includeAwarded) estimatedOpps *= 1.5;
-    
-    // Round to nearest whole number
-    estimatedOpps = Math.round(estimatedOpps);
-    
-    // Estimate opportunities within distance
-    let withinDistance = estimatedOpps;
-    if (maxDistance <= 100) withinDistance *= 0.05;
-    else if (maxDistance <= 200) withinDistance *= 0.15;
-    else if (maxDistance <= 500) withinDistance *= 0.40;
-    else withinDistance *= 0.70;
-    
-    withinDistance = Math.round(withinDistance);
-    
-    // Calculate processing time (includes API calls for distance)
-    const processingTime = Math.max(1, Math.ceil(estimatedOpps / 30)); // ~30 opps per minute
-    
-    // Update display
-    document.getElementById('estimatedOpps').textContent = `~${estimatedOpps}`;
-    document.getElementById('withinDistance').textContent = `~${withinDistance}`;
-    document.getElementById('processingTime').textContent = `~${processingTime} min`;
 }
 
 // Show status message
