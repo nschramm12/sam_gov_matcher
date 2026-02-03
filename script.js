@@ -210,9 +210,6 @@ function loadSearchSettings(data) {
     if (data.special_request !== undefined) {
         document.getElementById('specialRequest').value = data.special_request;
     }
-    
-    // Update preview
-    updateImpactPreview();
 }
 
 // Show status message
@@ -517,16 +514,10 @@ form.addEventListener('submit', async (e) => {
     }
 });
 
-// Initialize impact preview on load
+// Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
     initializeRanking();
-    updateImpactPreview();
-    
-    // Update preview when any input changes
-    document.querySelectorAll('input, textarea').forEach(input => {
-        input.addEventListener('change', updateImpactPreview);
-    });
-    
+
     // Load saved webhook URL
     const savedUrl = localStorage.getItem('samgov_webhook_url');
     if (savedUrl) {
