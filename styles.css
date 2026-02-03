@@ -337,7 +337,7 @@ input[type="checkbox"] {
 }
 
 #resultsContent {
-    background: white;
+    background: #f8f9fa;
     padding: 20px;
     border-radius: 8px;
 }
@@ -395,12 +395,14 @@ footer {
 }
 
 .opportunity-card {
-    display: flex;
-    background: white;
+    display: flex !important;
+    flex-direction: row !important;
+    background: #ffffff;
     border: 2px solid #e9ecef;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
     transition: all 0.3s ease;
+    min-height: 180px;
 }
 
 .opportunity-card:hover {
@@ -409,8 +411,9 @@ footer {
 }
 
 .opportunity-content {
-    flex: 1;
+    flex: 1 1 auto;
     padding: 20px;
+    display: block;
 }
 
 .opportunity-header {
@@ -419,6 +422,7 @@ footer {
     justify-content: space-between;
     gap: 15px;
     margin-bottom: 8px;
+    flex-wrap: wrap;
 }
 
 .opportunity-title {
@@ -451,16 +455,18 @@ footer {
 }
 
 .opportunity-details {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px 20px;
     margin-bottom: 12px;
+    margin-top: 12px;
 }
 
 .detail-row {
     display: flex;
     gap: 8px;
     font-size: 13px;
+    line-height: 1.4;
 }
 
 .detail-label {
@@ -502,14 +508,15 @@ footer {
 
 /* Opportunity Actions (Right Side) */
 .opportunity-actions {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 20px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-left: 2px solid #e9ecef;
-    min-width: 150px;
+    min-width: 160px;
+    flex-shrink: 0;
     gap: 12px;
 }
 
@@ -581,17 +588,17 @@ footer {
 /* Responsive adjustments for cards */
 @media (max-width: 768px) {
     .opportunity-card {
-        flex-direction: column;
+        flex-direction: column !important;
     }
 
     .opportunity-actions {
-        flex-direction: row;
+        flex-direction: row !important;
         border-left: none;
         border-top: 2px solid #e9ecef;
         min-width: auto;
     }
 
     .opportunity-details {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
 }
