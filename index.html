@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAM.gov Matcher - Search Configuration</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 SAM.gov Opportunity Matcher</h1>
+            <p class="subtitle">Configure your search preferences and find matching government contracts</p>
+        </header>
+
+        <main>
+            <!-- Status Display -->
+            <div id="statusDisplay" class="status-display hidden">
+                <div class="status-icon" id="statusIcon">⏳</div>
+                <div class="status-text" id="statusText">Waiting...</div>
+            </div>
+
+            <!-- Search Configuration Form -->
+            <form id="searchForm" class="search-form">
+                
+                <!-- User Identification -->
+                <div class="form-section">
+                    <h2>👤 Your Information</h2>
+                    <div class="form-group">
+                        <label for="userEmail">Your Email: <span class="required">*</span></label>
+                        <input 
+                            type="email" 
+                            id="userEmail" 
+                            name="user_email" 
+                            placeholder="your.email@company.com"
+                            required
+                        >
+                        <small>Used to save and retrieve your search settings</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="userName">Your Name:</label>
+                        <input 
+                            type="text" 
+                            id="userName" 
+                            name="user_name" 
+                            placeholder="John Smith"
+                        >
+                        <small>Optional: For display purposes</small>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn-secondary" id="loadPreviousBtn">
+                            📥 Load My Previous Search
+                        </button>
+                        <small>Retrieves your last saved search configuration</small>
+                    </div>
+                </div>
+
+                <!-- Make.com Webhook URL -->
+                <div class="form-section">
+                    <h2>📡 Make.com Connection</h2>
+                    <div class="form-group">
+                        <label for="webhookUrl">Make.com Webhook URL:</label>
+                        <input 
+                            type="url" 
+                            id="webhookUrl" 
+                            name="webhook_url" 
+                            placeholder="https://hook.us1.make.com/..."
+                            required
+                        >
+                        <small>Get this from your Make.com scenario's webhook module</small>
+                    </div>
+                </div>
+
+                <!-- Company Information -->
+                <div class="form-section">
+                    <h2>🏢 Your Company Information</h2>
+                    
+                    <!-- ZIP Code -->
+                    <div class="form-group">
+                        <label for="companyZip">Your ZIP Code: <span class="required">*</span></label>
+                        <input 
+                            type="text" 
+                            id="companyZip" 
+                            name="company_zip" 
+                            placeholder="92019"
+                            pattern="[0-9]{5}"
+                            maxlength="5"
+                            required
+                        >
+                        <small>5-digit ZIP code where your company is located</small>
+                    </div>
+
+                    <!-- Business Type (Set-Asides) -->
+                    <div class="form-group">
+                        <label>Business Type / Set-Aside Qualifications:</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="set_aside" value="NONE" checked>
+                                <span>Open Competition (no restriction)</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="set_aside" value="SBA" checked>
+                                <span>SBA - Small Business Set-Aside</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="set_aside" value="SDVOSBC">
+                                <span>SDVOSBC - Service-Disabled Veteran-Owned</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="set_aside" value="8A">
+                                <span>8(a) - 8(a) Business Development</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="set_aside" value="WOSB">
+                                <span>WOSB - Women-Owned Small Business</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="set_aside" value="HUBZone">
+                                <span>HUBZone - Historically Underutilized Business Zone</span>
+                            </label>
+                        </div>
+                        <small>Select which set-aside types your company qualifies for</small>
+                    </div>
+
+                    <!-- NAICS Codes -->
+                    <div class="form-group">
+                        <label for="naicsCodes">NAICS Codes (comma-separated): <span class="required">*</span></label>
+                        <input 
+                            type="text" 
+                            id="naicsCodes" 
+                            name="naics_filter" 
+                            placeholder="238220, 236220, 238210"
+                            value="238220"
+                            required
+                        >
+                        <small>Industry codes your company bids on (e.g., 238220 for HVAC)</small>
+                    </div>
+
+                    <!-- PSC Codes -->
+                    <div class="form-group">
+                        <label for="pscCodes">PSC Codes (comma-separated):</label>
+                        <input 
+                            type="text" 
+                            id="pscCodes" 
+                            name="psc_filter" 
+                            placeholder="J041, J045, Y1JZ"
+                        >
+                        <small>Optional: Product/Service codes (leave blank to skip PSC filtering)</small>
+                    </div>
+                </div>
+
+                <!-- Preferences -->
+                <div class="form-section">
+                    <h2>🎯 Search Preferences</h2>
+                    
+                    <!-- Max Distance Slider -->
+                    <div class="form-group">
+                        <label for="maxDistance">
+                            Maximum Travel Distance: 
+                            <strong><span id="maxDistanceValue">200</span> miles</strong>
+                        </label>
+                        <input 
+                            type="range" 
+                            id="maxDistance" 
+                            name="max_distance" 
+                            min="50" 
+                            max="1000" 
+                            value="200" 
+                            step="50"
+                            class="slider"
+                        >
+                        <div class="slider-labels">
+                            <span>50 mi</span>
+                            <span>500 mi</span>
+                            <span>1,000 mi</span>
+                        </div>
+                        <small>How far are you willing to travel for projects?</small>
+                    </div>
+
+                    <!-- Minimum Contract Value -->
+                    <div class="form-group">
+                        <label for="minValue">
+                            Minimum Contract Value: 
+                            <strong>$<span id="minValueDisplay">50,000</span></strong>
+                        </label>
+                        <input 
+                            type="range" 
+                            id="minValue" 
+                            name="min_value" 
+                            min="0" 
+                            max="500000" 
+                            value="50000" 
+                            step="10000"
+                            class="slider"
+                        >
+                        <div class="slider-labels">
+                            <span>$0</span>
+                            <span>$250k</span>
+                            <span>$500k</span>
+                        </div>
+                        <small>Minimum project size you're interested in (set to $0 for any size)</small>
+                    </div>
+
+                    <!-- Bid Comfort Days -->
+                    <div class="form-group">
+                        <label for="bidComfortDays">
+                            Bid Preparation Time: 
+                            <strong><span id="bidComfortDaysValue">14</span> days</strong>
+                        </label>
+                        <input 
+                            type="range" 
+                            id="bidComfortDays" 
+                            name="bid_comfort_days" 
+                            min="3" 
+                            max="60" 
+                            value="14" 
+                            step="1"
+                            class="slider"
+                        >
+                        <div class="slider-labels">
+                            <span>3 days</span>
+                            <span>30 days</span>
+                            <span>60 days</span>
+                        </div>
+                        <small>How many days you need to prepare a competitive bid</small>
+                    </div>
+
+                    <!-- Minimum Days Until Deadline -->
+                    <div class="form-group">
+                        <label for="minDays">
+                            Minimum Days Until Deadline: 
+                            <strong><span id="minDaysValue">7</span> days</strong>
+                        </label>
+                        <input 
+                            type="range" 
+                            id="minDays" 
+                            name="min_days" 
+                            min="0" 
+                            max="30" 
+                            value="7" 
+                            step="1"
+                            class="slider"
+                        >
+                        <div class="slider-labels">
+                            <span>0 days</span>
+                            <span>15 days</span>
+                            <span>30 days</span>
+                        </div>
+                        <small>Filter out opportunities closing too soon</small>
+                    </div>
+                </div>
+
+                <!-- Score Importance Ranking -->
+                <div class="form-section">
+                    <h2>⚖️ Rank What Matters Most</h2>
+                    <p style="color: #6c757d; font-size: 14px; margin-bottom: 20px;">
+                        Drag and drop to rank these factors by importance. #1 = Most Important, #5 = Least Important
+                    </p>
+                    
+                    <div id="rankingContainer" class="ranking-container">
+                        <!-- Ranking items will be populated by JavaScript -->
+                    </div>
+                    
+                    <div class="ranking-legend">
+                        <p style="font-size: 13px; color: #6c757d; margin-top: 15px;">
+                            💡 <strong>Tip:</strong> Rank #1 will have ~4x more influence on match scores than Rank #5
+                        </p>
+                    </div>
+                    
+                    <!-- Hidden inputs to store ranking -->
+                    <input type="hidden" id="locationRank" name="location_rank" value="3">
+                    <input type="hidden" id="valueRank" name="value_rank" value="1">
+                    <input type="hidden" id="feasibilityRank" name="feasibility_rank" value="2">
+                    <input type="hidden" id="effortRank" name="effort_rank" value="5">
+                    <input type="hidden" id="specialRank" name="special_rank" value="4">
+                </div>
+
+                <!-- Additional Options -->
+                <div class="form-section">
+                    <h2>🔧 Additional Options</h2>
+
+                    <!-- Include Awarded Toggle -->
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" name="include_awarded" id="includeAwarded">
+                            <span class="toggle-switch"></span>
+                            <span>Include already-awarded contracts (for research)</span>
+                        </label>
+                        <small>Awarded contracts are useful for competitive intelligence</small>
+                    </div>
+
+                    <!-- Require Location Toggle -->
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" name="require_location" id="requireLocation">
+                            <span class="toggle-switch"></span>
+                            <span>Only show opportunities with location data</span>
+                        </label>
+                        <small>Ensures distance scoring will work immediately</small>
+                    </div>
+
+                    <!-- Special Requests / Custom Rules -->
+                    <div class="form-group">
+                        <label for="specialRequest">Special Requests / Custom Search Rules:</label>
+                        <textarea 
+                            id="specialRequest" 
+                            name="special_request" 
+                            rows="4"
+                            placeholder="Example: 'Prefer opportunities from Department of Defense or Veterans Affairs. Avoid projects requiring security clearance. Prioritize HVAC retrofits over new construction.'"
+                        ></textarea>
+                        <small>Optional: Add custom criteria in plain English. AI will apply these rules to your search.</small>
+                    </div>
+                </div>
+
+                <!-- Expected Impact Preview -->
+                <div class="form-section impact-preview">
+                    <h2>📊 Expected Results</h2>
+                    <div class="impact-stats" id="impactStats">
+                        <div class="stat">
+                            <span class="stat-label">Estimated Opportunities:</span>
+                            <span class="stat-value" id="estimatedOpps">~34</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Within Your Distance:</span>
+                            <span class="stat-value" id="withinDistance">~12</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Processing Time:</span>
+                            <span class="stat-value" id="processingTime">~2 min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" id="submitBtn">
+                        🚀 Search Opportunities
+                    </button>
+                    <button type="button" class="btn-secondary" id="resetBtn">
+                        🔄 Reset to Defaults
+                    </button>
+                </div>
+
+            </form>
+
+            <!-- Results Display -->
+            <div id="resultsSection" class="results-section hidden">
+                <h2>✅ Search Results</h2>
+                <div id="resultsContent"></div>
+            </div>
+
+        </main>
+
+        <footer>
+            <p>SAM.gov Matcher v2.0 | Powered by Make.com & Google Maps API</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
