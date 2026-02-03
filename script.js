@@ -403,44 +403,114 @@ function displayResults(data) {
         resultsSection.classList.remove('hidden');
         return;
     }
-    
-    // If data contains match results
+
+    // Check for opportunities array (from Make.com webhook response)
+    const opportunities = data.opportunities || data.matches || (Array.isArray(data) ? data : null);
+
     let html = '<div style="padding: 10px;">';
-    
-    if (data.matches && Array.isArray(data.matches)) {
+
+    if (opportunities && Array.isArray(opportunities) && opportunities.length > 0) {
         html += `<p style="color: #28a745; font-weight: 600; margin-bottom: 15px;">
-            Found ${data.matches.length} matching opportunities!
+            Found ${opportunities.length} opportunities!
         </p>`;
-        
-        if (data.matches.length > 0) {
-            html += '<div style="max-height: 400px; overflow-y: auto;">';
-            data.matches.forEach((match, index) => {
-                html += `
-                    <div style="padding: 15px; margin-bottom: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
-                        <strong>${index + 1}. ${match.title || 'Untitled Opportunity'}</strong>
-                        ${match.match_score ? `<span style="float: right; color: #667eea; font-weight: 600;">Score: ${match.match_score}</span>` : ''}
-                        <div style="margin-top: 5px; font-size: 14px; color: #6c757d;">
-                            ${match.notice_id ? `ID: ${match.notice_id}` : ''}
-                            ${match.days_until_due ? ` | ${match.days_until_due} days remaining` : ''}
-                            ${match.contract_value ? ` | $${match.contract_value.toLocaleString()}` : ''}
-                        </div>
-                    </div>
-                `;
-            });
-            html += '</div>';
-        }
+
+        // Create table for opportunities
+        html += `
+            <div class="opportunities-table-container" style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
+                <table class="opportunities-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead style="position: sticky; top: 0; background: #667eea; color: white;">
+                        <tr>
+                            <th style="padding: 10px; text-align: left; white-space: nowrap;">#</th>
+                            <th style="padding: 10px; text-align: left; min-width: 250px;">Title</th>
+                            <th style="padding: 10px; text-align: left;">Type</th>
+                            <th style="padding: 10px; text-align: left;">Set-Aside</th>
+                            <th style="padding: 10px; text-align: left;">NAICS</th>
+                            <th style="padding: 10px; text-align: left;">PSC</th>
+                            <th style="padding: 10px; text-align: left;">Location ZIP</th>
+                            <th style="padding: 10px; text-align: left;">Deadline</th>
+                            <th style="padding: 10px; text-align: left;">Posted</th>
+                            <th style="padding: 10px; text-align: left;">Agency</th>
+                            <th style="padding: 10px; text-align: left;">Contact</th>
+                            <th style="padding: 10px; text-align: left;">Link</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        opportunities.forEach((opp, index) => {
+            const rowBg = index % 2 === 0 ? '#f8f9fa' : '#ffffff';
+            const deadline = opp.responseDeadline ? formatDate(opp.responseDeadline) : '-';
+            const posted = opp.postedDate ? formatDate(opp.postedDate) : '-';
+
+            html += `
+                <tr style="background: ${rowBg}; border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 10px; vertical-align: top;">${index + 1}</td>
+                    <td style="padding: 10px; vertical-align: top;">
+                        <strong>${escapeHtml(opp.title || 'Untitled')}</strong>
+                        ${opp.solicitationNumber ? `<br><small style="color: #6c757d;">${escapeHtml(opp.solicitationNumber)}</small>` : ''}
+                    </td>
+                    <td style="padding: 10px; vertical-align: top; white-space: nowrap;">${escapeHtml(opp.type || opp.baseType || '-')}</td>
+                    <td style="padding: 10px; vertical-align: top;">
+                        ${opp.typeOfSetAside ? `<span style="background: #e7f3ff; color: #0066cc; padding: 2px 6px; border-radius: 4px; font-size: 11px;">${escapeHtml(opp.typeOfSetAside)}</span>` : '<span style="color: #28a745;">Open</span>'}
+                        ${opp.typeOfSetAsideDescription ? `<br><small style="color: #6c757d;">${escapeHtml(opp.typeOfSetAsideDescription)}</small>` : ''}
+                    </td>
+                    <td style="padding: 10px; vertical-align: top;">${escapeHtml(opp.naicsCodes || '-')}</td>
+                    <td style="padding: 10px; vertical-align: top;">${escapeHtml(opp.pscCode || '-')}</td>
+                    <td style="padding: 10px; vertical-align: top;">${escapeHtml(opp.popZIP || '-')}</td>
+                    <td style="padding: 10px; vertical-align: top; white-space: nowrap;">${deadline}</td>
+                    <td style="padding: 10px; vertical-align: top; white-space: nowrap;">${posted}</td>
+                    <td style="padding: 10px; vertical-align: top;">
+                        ${escapeHtml(opp.fullParentPathName || '-')}
+                    </td>
+                    <td style="padding: 10px; vertical-align: top;">
+                        ${opp.pocFullName ? escapeHtml(opp.pocFullName) : '-'}
+                        ${opp.pocEmail ? `<br><a href="mailto:${escapeHtml(opp.pocEmail)}" style="color: #667eea; font-size: 11px;">${escapeHtml(opp.pocEmail)}</a>` : ''}
+                        ${opp.pocPhone ? `<br><small style="color: #6c757d;">${escapeHtml(opp.pocPhone)}</small>` : ''}
+                    </td>
+                    <td style="padding: 10px; vertical-align: top;">
+                        ${opp.uiLink ? `<a href="${escapeHtml(opp.uiLink)}" target="_blank" style="color: #667eea;">View</a>` : '-'}
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
     } else if (data.message) {
-        html += `<p style="color: #667eea; font-weight: 600;">${data.message}</p>`;
+        html += `<p style="color: #667eea; font-weight: 600;">${escapeHtml(data.message)}</p>`;
     } else {
         html += `
             <p style="color: #28a745; font-weight: 600; margin-bottom: 10px;">✅ Search executed successfully!</p>
             <p style="color: #6c757d;">Results are being processed in Make.com.</p>
         `;
     }
-    
+
     html += '</div>';
     resultsContent.innerHTML = html;
     resultsSection.classList.remove('hidden');
+}
+
+// Helper function to format dates
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) {
+        return dateString;
+    }
+}
+
+// Helper function to escape HTML to prevent XSS
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Handle form submission

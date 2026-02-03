@@ -15,7 +15,7 @@ body {
 
 /* Container */
 .container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     background: white;
     border-radius: 16px;
@@ -372,8 +372,6 @@ input[type="checkbox"] {
     background: white;
     padding: 20px;
     border-radius: 8px;
-    max-height: 400px;
-    overflow-y: auto;
 }
 
 /* Footer */
@@ -422,4 +420,47 @@ footer {
 
 .loading .status-icon {
     animation: spin 1s linear infinite;
+}
+
+/* Opportunities Table */
+.opportunities-table-container {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.opportunities-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.opportunities-table th {
+    background: #667eea;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.opportunities-table td {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.opportunities-table tbody tr:hover {
+    background: #e7f3ff !important;
+}
+
+.opportunities-table a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.opportunities-table a:hover {
+    text-decoration: underline;
+}
+
+/* Make results section wider when showing table */
+.results-section {
+    overflow-x: auto;
 }
