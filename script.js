@@ -362,73 +362,73 @@ function displayResults(data) {
         </p>`;
 
         // Create card rows for opportunities
-        html += `<div class="opportunities-cards">`;
+        html += `<div class="opportunities-cards" style="display: flex; flex-direction: column; gap: 15px; max-height: 600px; overflow-y: auto;">`;
 
         opportunities.forEach((opp, index) => {
             const deadline = opp.responseDeadline ? formatDate(opp.responseDeadline) : '-';
             const posted = opp.postedDate ? formatDate(opp.postedDate) : '-';
 
             html += `
-                <div class="opportunity-card" data-index="${index}">
-                    <div class="opportunity-content">
-                        <div class="opportunity-header">
-                            <h3 class="opportunity-title">${escapeHtml(opp.title || 'Untitled')}</h3>
+                <div class="opportunity-card" data-index="${index}" style="display: flex; flex-direction: row; background: #fff; border: 2px solid #e9ecef; border-radius: 12px; min-height: 200px;">
+                    <div class="opportunity-content" style="flex: 1; padding: 20px;">
+                        <div class="opportunity-header" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 8px;">
+                            <h3 class="opportunity-title" style="font-size: 16px; font-weight: 600; color: #333; margin: 0;">${escapeHtml(opp.title || 'Untitled')}</h3>
                             ${opp.typeOfSetAside
-                                ? `<span class="set-aside-badge">${escapeHtml(opp.typeOfSetAside)}</span>`
-                                : '<span class="set-aside-badge open">Open</span>'}
+                                ? `<span class="set-aside-badge" style="background: #e7f3ff; color: #0066cc; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">${escapeHtml(opp.typeOfSetAside)}</span>`
+                                : '<span class="set-aside-badge open" style="background: #d4edda; color: #28a745; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap;">Open</span>'}
                         </div>
-                        ${opp.solicitationNumber ? `<div class="opportunity-solicitation">${escapeHtml(opp.solicitationNumber)}</div>` : ''}
+                        ${opp.solicitationNumber ? `<div class="opportunity-solicitation" style="font-size: 13px; color: #6c757d; margin-bottom: 12px;">${escapeHtml(opp.solicitationNumber)}</div>` : ''}
 
-                        <div class="opportunity-details">
-                            <div class="detail-row">
-                                <span class="detail-label">Type:</span>
-                                <span class="detail-value">${escapeHtml(opp.type || opp.baseType || '-')}</span>
+                        <div class="opportunity-details" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 20px; margin: 12px 0;">
+                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Type:</span>
+                                <span class="detail-value" style="color: #333;">${escapeHtml(opp.type || opp.baseType || '-')}</span>
                             </div>
-                            <div class="detail-row">
-                                <span class="detail-label">NAICS:</span>
-                                <span class="detail-value">${escapeHtml(opp.naicsCodes || '-')}</span>
+                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">NAICS:</span>
+                                <span class="detail-value" style="color: #333;">${escapeHtml(opp.naicsCodes || '-')}</span>
                             </div>
-                            <div class="detail-row">
-                                <span class="detail-label">PSC:</span>
-                                <span class="detail-value">${escapeHtml(opp.pscCode || '-')}</span>
+                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">PSC:</span>
+                                <span class="detail-value" style="color: #333;">${escapeHtml(opp.pscCode || '-')}</span>
                             </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Location:</span>
-                                <span class="detail-value">${escapeHtml(opp.popZIP || '-')}</span>
+                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Location:</span>
+                                <span class="detail-value" style="color: #333;">${escapeHtml(opp.popZIP || '-')}</span>
                             </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Posted:</span>
-                                <span class="detail-value">${posted}</span>
+                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Posted:</span>
+                                <span class="detail-value" style="color: #333;">${posted}</span>
                             </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Deadline:</span>
-                                <span class="detail-value deadline">${deadline}</span>
+                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Deadline:</span>
+                                <span class="detail-value" style="color: #dc3545; font-weight: 600;">${deadline}</span>
                             </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Agency:</span>
-                                <span class="detail-value">${escapeHtml(opp.fullParentPathName || '-')}</span>
+                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Agency:</span>
+                                <span class="detail-value" style="color: #333;">${escapeHtml(opp.fullParentPathName || '-')}</span>
                             </div>
                             ${opp.pocFullName ? `
-                            <div class="detail-row">
-                                <span class="detail-label">Contact:</span>
-                                <span class="detail-value">
+                            <div class="detail-row" style="display: flex; gap: 8px; font-size: 13px;">
+                                <span class="detail-label" style="color: #6c757d; font-weight: 500; min-width: 70px;">Contact:</span>
+                                <span class="detail-value" style="color: #333;">
                                     ${escapeHtml(opp.pocFullName)}
-                                    ${opp.pocEmail ? `<br><a href="mailto:${escapeHtml(opp.pocEmail)}">${escapeHtml(opp.pocEmail)}</a>` : ''}
+                                    ${opp.pocEmail ? `<br><a href="mailto:${escapeHtml(opp.pocEmail)}" style="color: #667eea;">${escapeHtml(opp.pocEmail)}</a>` : ''}
                                     ${opp.pocPhone ? `<br>${escapeHtml(opp.pocPhone)}` : ''}
                                 </span>
                             </div>
                             ` : ''}
                         </div>
 
-                        ${opp.uiLink ? `<a href="${escapeHtml(opp.uiLink)}" target="_blank" class="view-link">View on SAM.gov →</a>` : ''}
+                        ${opp.uiLink ? `<a href="${escapeHtml(opp.uiLink)}" target="_blank" class="view-link" style="display: inline-block; color: #667eea; font-size: 13px; font-weight: 500; text-decoration: none; margin-top: 5px;">View on SAM.gov →</a>` : ''}
                     </div>
 
-                    <div class="opportunity-actions">
-                        <div class="score-display" id="score-${index}">
-                            <span class="score-label">Match Score</span>
-                            <span class="score-value">--</span>
+                    <div class="opportunity-actions" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 2px solid #e9ecef; min-width: 160px; gap: 12px;">
+                        <div class="score-display" id="score-${index}" style="text-align: center;">
+                            <span class="score-label" style="display: block; font-size: 11px; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Match Score</span>
+                            <span class="score-value" style="display: block; font-size: 28px; font-weight: 700; color: #adb5bd;">--</span>
                         </div>
-                        <button type="button" class="btn-calculate-score" onclick="calculateMatchScore(${index})">
+                        <button type="button" class="btn-calculate-score" onclick="calculateMatchScore(${index})" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;">
                             📊 Calculate Score
                         </button>
                     </div>
