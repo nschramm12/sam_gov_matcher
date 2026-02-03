@@ -354,75 +354,89 @@ function displayResults(data) {
     let html = '<div style="padding: 10px;">';
 
     if (opportunities && Array.isArray(opportunities) && opportunities.length > 0) {
+        // Store opportunities globally for score calculation
+        window.currentOpportunities = opportunities;
+
         html += `<p style="color: #28a745; font-weight: 600; margin-bottom: 15px;">
             Found ${opportunities.length} opportunities!
         </p>`;
 
-        // Create table for opportunities
-        html += `
-            <div class="opportunities-table-container" style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
-                <table class="opportunities-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <thead style="position: sticky; top: 0; background: #667eea; color: white;">
-                        <tr>
-                            <th style="padding: 10px; text-align: left; white-space: nowrap;">#</th>
-                            <th style="padding: 10px; text-align: left; min-width: 250px;">Title</th>
-                            <th style="padding: 10px; text-align: left;">Type</th>
-                            <th style="padding: 10px; text-align: left;">Set-Aside</th>
-                            <th style="padding: 10px; text-align: left;">NAICS</th>
-                            <th style="padding: 10px; text-align: left;">PSC</th>
-                            <th style="padding: 10px; text-align: left;">Location ZIP</th>
-                            <th style="padding: 10px; text-align: left;">Deadline</th>
-                            <th style="padding: 10px; text-align: left;">Posted</th>
-                            <th style="padding: 10px; text-align: left;">Agency</th>
-                            <th style="padding: 10px; text-align: left;">Contact</th>
-                            <th style="padding: 10px; text-align: left;">Link</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
+        // Create card rows for opportunities
+        html += `<div class="opportunities-cards">`;
 
         opportunities.forEach((opp, index) => {
-            const rowBg = index % 2 === 0 ? '#f8f9fa' : '#ffffff';
             const deadline = opp.responseDeadline ? formatDate(opp.responseDeadline) : '-';
             const posted = opp.postedDate ? formatDate(opp.postedDate) : '-';
 
             html += `
-                <tr style="background: ${rowBg}; border-bottom: 1px solid #dee2e6;">
-                    <td style="padding: 10px; vertical-align: top;">${index + 1}</td>
-                    <td style="padding: 10px; vertical-align: top;">
-                        <strong>${escapeHtml(opp.title || 'Untitled')}</strong>
-                        ${opp.solicitationNumber ? `<br><small style="color: #6c757d;">${escapeHtml(opp.solicitationNumber)}</small>` : ''}
-                    </td>
-                    <td style="padding: 10px; vertical-align: top; white-space: nowrap;">${escapeHtml(opp.type || opp.baseType || '-')}</td>
-                    <td style="padding: 10px; vertical-align: top;">
-                        ${opp.typeOfSetAside ? `<span style="background: #e7f3ff; color: #0066cc; padding: 2px 6px; border-radius: 4px; font-size: 11px;">${escapeHtml(opp.typeOfSetAside)}</span>` : '<span style="color: #28a745;">Open</span>'}
-                        ${opp.typeOfSetAsideDescription ? `<br><small style="color: #6c757d;">${escapeHtml(opp.typeOfSetAsideDescription)}</small>` : ''}
-                    </td>
-                    <td style="padding: 10px; vertical-align: top;">${escapeHtml(opp.naicsCodes || '-')}</td>
-                    <td style="padding: 10px; vertical-align: top;">${escapeHtml(opp.pscCode || '-')}</td>
-                    <td style="padding: 10px; vertical-align: top;">${escapeHtml(opp.popZIP || '-')}</td>
-                    <td style="padding: 10px; vertical-align: top; white-space: nowrap;">${deadline}</td>
-                    <td style="padding: 10px; vertical-align: top; white-space: nowrap;">${posted}</td>
-                    <td style="padding: 10px; vertical-align: top;">
-                        ${escapeHtml(opp.fullParentPathName || '-')}
-                    </td>
-                    <td style="padding: 10px; vertical-align: top;">
-                        ${opp.pocFullName ? escapeHtml(opp.pocFullName) : '-'}
-                        ${opp.pocEmail ? `<br><a href="mailto:${escapeHtml(opp.pocEmail)}" style="color: #667eea; font-size: 11px;">${escapeHtml(opp.pocEmail)}</a>` : ''}
-                        ${opp.pocPhone ? `<br><small style="color: #6c757d;">${escapeHtml(opp.pocPhone)}</small>` : ''}
-                    </td>
-                    <td style="padding: 10px; vertical-align: top;">
-                        ${opp.uiLink ? `<a href="${escapeHtml(opp.uiLink)}" target="_blank" style="color: #667eea;">View</a>` : '-'}
-                    </td>
-                </tr>
+                <div class="opportunity-card" data-index="${index}">
+                    <div class="opportunity-content">
+                        <div class="opportunity-header">
+                            <h3 class="opportunity-title">${escapeHtml(opp.title || 'Untitled')}</h3>
+                            ${opp.typeOfSetAside
+                                ? `<span class="set-aside-badge">${escapeHtml(opp.typeOfSetAside)}</span>`
+                                : '<span class="set-aside-badge open">Open</span>'}
+                        </div>
+                        ${opp.solicitationNumber ? `<div class="opportunity-solicitation">${escapeHtml(opp.solicitationNumber)}</div>` : ''}
+
+                        <div class="opportunity-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Type:</span>
+                                <span class="detail-value">${escapeHtml(opp.type || opp.baseType || '-')}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">NAICS:</span>
+                                <span class="detail-value">${escapeHtml(opp.naicsCodes || '-')}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">PSC:</span>
+                                <span class="detail-value">${escapeHtml(opp.pscCode || '-')}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Location:</span>
+                                <span class="detail-value">${escapeHtml(opp.popZIP || '-')}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Posted:</span>
+                                <span class="detail-value">${posted}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Deadline:</span>
+                                <span class="detail-value deadline">${deadline}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Agency:</span>
+                                <span class="detail-value">${escapeHtml(opp.fullParentPathName || '-')}</span>
+                            </div>
+                            ${opp.pocFullName ? `
+                            <div class="detail-row">
+                                <span class="detail-label">Contact:</span>
+                                <span class="detail-value">
+                                    ${escapeHtml(opp.pocFullName)}
+                                    ${opp.pocEmail ? `<br><a href="mailto:${escapeHtml(opp.pocEmail)}">${escapeHtml(opp.pocEmail)}</a>` : ''}
+                                    ${opp.pocPhone ? `<br>${escapeHtml(opp.pocPhone)}` : ''}
+                                </span>
+                            </div>
+                            ` : ''}
+                        </div>
+
+                        ${opp.uiLink ? `<a href="${escapeHtml(opp.uiLink)}" target="_blank" class="view-link">View on SAM.gov →</a>` : ''}
+                    </div>
+
+                    <div class="opportunity-actions">
+                        <div class="score-display" id="score-${index}">
+                            <span class="score-label">Match Score</span>
+                            <span class="score-value">--</span>
+                        </div>
+                        <button type="button" class="btn-calculate-score" onclick="calculateMatchScore(${index})">
+                            📊 Calculate Score
+                        </button>
+                    </div>
+                </div>
             `;
         });
 
-        html += `
-                    </tbody>
-                </table>
-            </div>
-        `;
+        html += `</div>`;
 
     } else if (data.message) {
         html += `<p style="color: #667eea; font-weight: 600;">${escapeHtml(data.message)}</p>`;
@@ -436,6 +450,100 @@ function displayResults(data) {
     html += '</div>';
     resultsContent.innerHTML = html;
     resultsSection.classList.remove('hidden');
+}
+
+// Calculate match score for a single opportunity
+async function calculateMatchScore(index) {
+    const opportunity = window.currentOpportunities[index];
+    if (!opportunity) {
+        console.error('Opportunity not found');
+        return;
+    }
+
+    const scoreDisplay = document.getElementById(`score-${index}`);
+    const button = scoreDisplay.parentElement.querySelector('.btn-calculate-score');
+
+    // Get the score webhook URL (can be same or different from search webhook)
+    const scoreWebhookUrl = document.getElementById('webhookUrl').value.trim();
+    if (!scoreWebhookUrl) {
+        alert('Please enter a Make.com webhook URL');
+        return;
+    }
+
+    // Show loading state
+    button.disabled = true;
+    button.textContent = '⏳ Calculating...';
+    scoreDisplay.querySelector('.score-value').textContent = '...';
+
+    // Get current ranking values
+    const rankings = {
+        location_rank: parseInt(document.getElementById('locationRank').value),
+        value_rank: parseInt(document.getElementById('valueRank').value),
+        feasibility_rank: parseInt(document.getElementById('feasibilityRank').value),
+        effort_rank: parseInt(document.getElementById('effortRank').value),
+        special_rank: parseInt(document.getElementById('specialRank').value)
+    };
+
+    // Get user preferences for scoring context
+    const userPreferences = {
+        company_zip: document.getElementById('companyZip').value.trim(),
+        max_distance: parseInt(document.getElementById('maxDistance').value),
+        min_value: parseInt(document.getElementById('minValue').value),
+        bid_comfort_days: parseInt(document.getElementById('bidComfortDays').value),
+        special_request: document.getElementById('specialRequest').value.trim()
+    };
+
+    // Build payload for score calculation
+    const payload = {
+        action: 'calculate_score',
+        opportunity: opportunity,
+        rankings: rankings,
+        user_preferences: userPreferences,
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        const response = await fetch(scoreWebhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        // Update score display
+        if (result.match_score !== undefined) {
+            scoreDisplay.querySelector('.score-value').textContent = result.match_score;
+            scoreDisplay.classList.add('has-score');
+
+            // Color code based on score
+            const scoreValue = parseFloat(result.match_score);
+            if (scoreValue >= 80) {
+                scoreDisplay.classList.add('score-high');
+            } else if (scoreValue >= 50) {
+                scoreDisplay.classList.add('score-medium');
+            } else {
+                scoreDisplay.classList.add('score-low');
+            }
+        } else {
+            scoreDisplay.querySelector('.score-value').textContent = result.score || 'N/A';
+        }
+
+        button.textContent = '✓ Scored';
+        button.disabled = true;
+
+    } catch (error) {
+        console.error('Score calculation error:', error);
+        scoreDisplay.querySelector('.score-value').textContent = 'Error';
+        button.textContent = '↻ Retry';
+        button.disabled = false;
+    }
 }
 
 // Helper function to format dates
