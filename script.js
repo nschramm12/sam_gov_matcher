@@ -362,7 +362,7 @@ function displayResults(data) {
         </p>`;
 
         // Create card rows for opportunities
-        html += `<div class="opportunities-cards" style="display: flex; flex-direction: column; gap: 15px; max-height: 600px; overflow-y: auto;">`;
+        html += `<div class="opportunities-cards" style="display: flex; flex-direction: column; gap: 20px;">`;
 
         opportunities.forEach((opp, index) => {
             const deadline = opp.responseDeadline ? formatDate(opp.responseDeadline) : '-';
