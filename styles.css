@@ -579,8 +579,22 @@ textarea {
     color: #333;
 }
 
+/* Hide checkbox visually but keep it accessible */
+.toggle-label input[type="checkbox"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .toggle-switch {
     position: relative;
+    display: inline-block;
     width: 52px;
     min-width: 52px;
     height: 28px;
@@ -609,14 +623,6 @@ textarea {
 
 .toggle-label input[type="checkbox"]:checked + .toggle-switch::after {
     transform: translateX(24px);
-}
-
-/* Hide checkboxes only for toggle switches */
-.toggle-label input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
 }
 
 /* Form Actions */
