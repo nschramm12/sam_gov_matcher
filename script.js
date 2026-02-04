@@ -28,6 +28,9 @@ const minValueDisplay = document.getElementById('minValueDisplay');
 const bidComfortSlider = document.getElementById('bidComfortDays');
 const bidComfortValue = document.getElementById('bidComfortDaysValue');
 
+// Webhook URL for search (finds opportunities based on criteria)
+const SEARCH_WEBHOOK_URL = 'https://hook.us2.make.com/7yugrm1u8aoeoxy6n7mka7613kojavew';
+
 // Webhook URL for revealing details (extracts award amount & ZIP from description)
 const REVEAL_WEBHOOK_URL = 'https://hook.us2.make.com/mgc2n9nvbpwi2bnv3n4g5i4q4jvydm5g';
 
@@ -267,32 +270,6 @@ resetBtn.addEventListener('click', () => {
     document.getElementById('specialRequest').value = DEFAULTS.special_request;
 });
 
-// ========== LOAD PREVIOUS SEARCH (in modal) ==========
-
-document.getElementById('loadPreviousBtn').addEventListener('click', async () => {
-    const userEmail = document.getElementById('userEmail').value.trim();
-
-    if (!userEmail) {
-        alert('Please enter your email address first');
-        return;
-    }
-
-    const savedSearch = localStorage.getItem(`samgov_search_${userEmail}`);
-
-    if (savedSearch) {
-        try {
-            const searchData = JSON.parse(savedSearch);
-            loadSearchSettings(searchData);
-            showStatus('success', 'Previous search settings loaded!');
-            setTimeout(() => hideStatus(), 2000);
-        } catch (error) {
-            alert('Error loading saved search');
-        }
-    } else {
-        alert('No previous search found for this email address');
-    }
-});
-
 // ========== LOAD OPPORTUNITIES (main page) ==========
 
 loadOpportunitiesBtn.addEventListener('click', async () => {
@@ -386,7 +363,6 @@ function hideStatus() {
 
 function collectFormData() {
     const formData = new FormData(form);
-    const webhookUrl = formData.get('webhook_url');
     const searchId = `SEARCH_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const userEmail = formData.get('user_email').trim();
@@ -423,7 +399,7 @@ function collectFormData() {
 
     localStorage.setItem(`samgov_search_${userEmail}`, JSON.stringify(payload));
 
-    return { webhookUrl, payload, userEmail };
+    return { payload, userEmail };
 }
 
 // ========== SEND TO MAKE.COM ==========
@@ -736,17 +712,12 @@ form.addEventListener('submit', async (e) => {
         return;
     }
 
-    const { webhookUrl, payload } = collectFormData();
-
-    if (!webhookUrl || !webhookUrl.startsWith('http')) {
-        showStatus('error', 'Please enter a valid Make.com webhook URL');
-        return;
-    }
+    const { payload } = collectFormData();
 
     showStatus('loading', 'Searching for opportunities...');
     submitBtn.disabled = true;
 
-    const result = await sendToMakecom(webhookUrl, payload);
+    const result = await sendToMakecom(SEARCH_WEBHOOK_URL, payload);
 
     submitBtn.disabled = false;
 
@@ -884,12 +855,6 @@ function updateRankingInputs() {
 
 // ========== SAVE TO LOCALSTORAGE ==========
 
-document.getElementById('webhookUrl').addEventListener('blur', (e) => {
-    if (e.target.value) {
-        localStorage.setItem('samgov_webhook_url', e.target.value);
-    }
-});
-
 document.getElementById('userEmail').addEventListener('blur', (e) => {
     if (e.target.value) {
         localStorage.setItem('samgov_user_email', e.target.value);
@@ -907,12 +872,6 @@ document.getElementById('companyZip').addEventListener('blur', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     initializeRanking();
     updateApiCounterDisplay();
-
-    // Load saved webhook URL
-    const savedUrl = localStorage.getItem('samgov_webhook_url');
-    if (savedUrl) {
-        document.getElementById('webhookUrl').value = savedUrl;
-    }
 
     // Load saved user email
     const savedEmail = localStorage.getItem('samgov_user_email');
