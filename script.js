@@ -452,6 +452,9 @@ function displayResults(data) {
     resultsSection.classList.remove('hidden');
 }
 
+// Dedicated webhook URL for score calculation
+const SCORE_WEBHOOK_URL = 'https://hook.us2.make.com/mgc2n9nvbpwi2bnv3n4g5i4q4jvydm5g';
+
 // Calculate match score for a single opportunity
 async function calculateMatchScore(index) {
     const opportunity = window.currentOpportunities[index];
@@ -462,13 +465,6 @@ async function calculateMatchScore(index) {
 
     const scoreDisplay = document.getElementById(`score-${index}`);
     const button = scoreDisplay.parentElement.querySelector('.btn-calculate-score');
-
-    // Get the score webhook URL (can be same or different from search webhook)
-    const scoreWebhookUrl = document.getElementById('webhookUrl').value.trim();
-    if (!scoreWebhookUrl) {
-        alert('Please enter a Make.com webhook URL');
-        return;
-    }
 
     // Show loading state
     button.disabled = true;
@@ -503,7 +499,7 @@ async function calculateMatchScore(index) {
     };
 
     try {
-        const response = await fetch(scoreWebhookUrl, {
+        const response = await fetch(SCORE_WEBHOOK_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
