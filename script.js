@@ -8,7 +8,6 @@ const mainEmailInput = document.getElementById('mainEmail');
 const loadOpportunitiesBtn = document.getElementById('loadOpportunitiesBtn');
 const newSearchBtn = document.getElementById('newSearchBtn');
 const apiCounterValue = document.getElementById('apiCounterValue');
-const refreshApiBtn = document.getElementById('refreshApiBtn');
 
 // DOM Elements - Modal
 const searchModal = document.getElementById('searchModal');
@@ -28,14 +27,11 @@ const minValueDisplay = document.getElementById('minValueDisplay');
 const bidComfortSlider = document.getElementById('bidComfortDays');
 const bidComfortValue = document.getElementById('bidComfortDaysValue');
 
-// Webhook URL for search (finds opportunities based on criteria)
+// Webhook URL for search (calls SAM.gov API and returns filtered opportunities)
 const SEARCH_WEBHOOK_URL = 'https://hook.us2.make.com/7yugrm1u8aoeoxy6n7mka7613kojavew';
 
 // Webhook URL for revealing details (extracts award amount & ZIP from description)
 const REVEAL_WEBHOOK_URL = 'https://hook.us2.make.com/mgc2n9nvbpwi2bnv3n4g5i4q4jvydm5g';
-
-// Webhook URL for refreshing API data (fetches new batch from SAM.gov)
-const REFRESH_API_WEBHOOK_URL = 'https://hook.us2.make.com/1mc6jnejusfak35y1pinkpt2s9aqxh5d';
 
 // API Call Counter (10 per day)
 const MAX_DAILY_CALLS = 10;
@@ -94,87 +90,6 @@ modalOverlay.addEventListener('click', closeSearchModal);
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !searchModal.classList.contains('hidden')) {
         closeSearchModal();
-    }
-});
-
-// ========== REFRESH API DATA ==========
-
-refreshApiBtn.addEventListener('click', async () => {
-    if (!canMakeApiCall()) {
-        alert('You have used all 10 daily API calls. Please try again tomorrow.');
-        return;
-    }
-
-    const userEmail = mainEmailInput.value.trim() || localStorage.getItem('samgov_user_email');
-    if (!userEmail) {
-        alert('Please enter your email first to associate the refreshed data.');
-        return;
-    }
-
-    // Show loading state
-    refreshApiBtn.disabled = true;
-    refreshApiBtn.textContent = '⏳ Refreshing...';
-    showStatus('loading', 'Fetching new opportunities from SAM.gov API...');
-
-    try {
-        const payload = {
-            action: 'refresh_api',
-            user_email: userEmail,
-            timestamp: new Date().toISOString()
-        };
-
-        const response = await fetch(REFRESH_API_WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        // Increment API call counter regardless of response
-        incrementApiCallCount();
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        // Try to get response data (new opportunities)
-        let result;
-        try {
-            result = await response.json();
-        } catch (e) {
-            // No JSON response - that's okay, the webhook may not return data
-            result = null;
-        }
-
-        // If webhook returns opportunities, display them
-        if (result) {
-            const opportunities = result.opportunities || result.matches || (Array.isArray(result) ? result : null);
-            if (opportunities && opportunities.length > 0) {
-                // Clear old revealed data for fresh opportunities
-                opportunities.forEach(opp => {
-                    delete opp._revealed;
-                    delete opp._awardAmount;
-                    delete opp._locationZip;
-                });
-
-                // Save and display
-                localStorage.setItem(`samgov_opportunities_${userEmail}`, JSON.stringify(opportunities));
-                displayOpportunities(opportunities);
-                showStatus('success', `Loaded ${opportunities.length} new opportunities!`);
-            } else {
-                showStatus('success', 'API refresh triggered! Run a new search to see updated results.');
-            }
-        } else {
-            showStatus('success', 'API refresh triggered! Run a new search to see updated results.');
-        }
-
-        setTimeout(() => hideStatus(), 3000);
-
-    } catch (error) {
-        console.error('Refresh API error:', error);
-        showStatus('error', `Error: ${error.message}`);
-    } finally {
-        refreshApiBtn.disabled = false;
-        refreshApiBtn.textContent = '🔄 Refresh API Data';
     }
 });
 
@@ -558,7 +473,6 @@ function displayOpportunities(opportunities) {
                                 onclick="revealDetails(${index})">
                             🔍 Reveal Missing
                         </button>
-                        <small style="color: #6c757d; font-size: 11px; text-align: center;">Uses 1 API call</small>
                     ` : `
                         <div style="color: #28a745; font-size: 13px; font-weight: 600;">✓ Complete</div>
                     `}
@@ -574,11 +488,6 @@ function displayOpportunities(opportunities) {
 // ========== REVEAL DETAILS ==========
 
 async function revealDetails(index) {
-    if (!canMakeApiCall()) {
-        alert('You have used all 10 daily API calls. Please try again tomorrow.');
-        return;
-    }
-
     const opportunity = window.currentOpportunities[index];
     if (!opportunity) {
         console.error('Opportunity not found');
@@ -627,9 +536,6 @@ async function revealDetails(index) {
         }
 
         const result = await response.json();
-
-        // Increment API call counter
-        incrementApiCallCount();
 
         // Update display with revealed data
         // Handle award_amount - could be a value or null (not found by AI)
@@ -715,6 +621,12 @@ function escapeHtml(text) {
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    // Check API call limit first
+    if (!canMakeApiCall()) {
+        showStatus('error', 'You have used all 10 daily searches. Please try again tomorrow.');
+        return;
+    }
+
     const userEmail = document.getElementById('userEmail').value.trim();
     if (!userEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)) {
         showStatus('error', 'Please enter a valid email address');
@@ -735,10 +647,13 @@ form.addEventListener('submit', async (e) => {
 
     const { payload } = collectFormData();
 
-    showStatus('loading', 'Searching for opportunities...');
+    showStatus('loading', 'Searching SAM.gov for opportunities...');
     submitBtn.disabled = true;
 
     const result = await sendToMakecom(SEARCH_WEBHOOK_URL, payload);
+
+    // Increment API call counter after search attempt
+    incrementApiCallCount();
 
     submitBtn.disabled = false;
 
