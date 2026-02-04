@@ -477,6 +477,7 @@ async function calculateMatchScore(index) {
         timestamp: new Date().toISOString(),
 
         // Opportunity fields (flattened with opp_ prefix)
+        opp_noticeId: opportunity.noticeId || '',
         opp_title: opportunity.title || '',
         opp_solicitationNumber: opportunity.solicitationNumber || '',
         opp_type: opportunity.type || '',
