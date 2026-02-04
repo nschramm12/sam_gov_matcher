@@ -471,31 +471,41 @@ async function calculateMatchScore(index) {
     button.textContent = '⏳ Calculating...';
     scoreDisplay.querySelector('.score-value').textContent = '...';
 
-    // Get current ranking values
-    const rankings = {
+    // Build flat payload for score calculation
+    const payload = {
+        action: 'calculate_score',
+        timestamp: new Date().toISOString(),
+
+        // Opportunity fields (flattened with opp_ prefix)
+        opp_title: opportunity.title || '',
+        opp_solicitationNumber: opportunity.solicitationNumber || '',
+        opp_type: opportunity.type || '',
+        opp_baseType: opportunity.baseType || '',
+        opp_typeOfSetAside: opportunity.typeOfSetAside || '',
+        opp_naicsCodes: opportunity.naicsCodes || '',
+        opp_pscCode: opportunity.pscCode || '',
+        opp_popZIP: opportunity.popZIP || '',
+        opp_postedDate: opportunity.postedDate || '',
+        opp_responseDeadline: opportunity.responseDeadline || '',
+        opp_fullParentPathName: opportunity.fullParentPathName || '',
+        opp_pocFullName: opportunity.pocFullName || '',
+        opp_pocEmail: opportunity.pocEmail || '',
+        opp_pocPhone: opportunity.pocPhone || '',
+        opp_uiLink: opportunity.uiLink || '',
+
+        // Rankings (flattened)
         location_rank: parseInt(document.getElementById('locationRank').value),
         value_rank: parseInt(document.getElementById('valueRank').value),
         feasibility_rank: parseInt(document.getElementById('feasibilityRank').value),
         effort_rank: parseInt(document.getElementById('effortRank').value),
-        special_rank: parseInt(document.getElementById('specialRank').value)
-    };
+        special_rank: parseInt(document.getElementById('specialRank').value),
 
-    // Get user preferences for scoring context
-    const userPreferences = {
+        // User preferences (flattened)
         company_zip: document.getElementById('companyZip').value.trim(),
         max_distance: parseInt(document.getElementById('maxDistance').value),
         min_value: parseInt(document.getElementById('minValue').value),
         bid_comfort_days: parseInt(document.getElementById('bidComfortDays').value),
         special_request: document.getElementById('specialRequest').value.trim()
-    };
-
-    // Build payload for score calculation
-    const payload = {
-        action: 'calculate_score',
-        opportunity: opportunity,
-        rankings: rankings,
-        user_preferences: userPreferences,
-        timestamp: new Date().toISOString()
     };
 
     try {
