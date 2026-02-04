@@ -358,6 +358,68 @@
         </div>
     </div>
 
+    <!-- Welcome/Directions Modal -->
+    <div id="welcomeModal" class="welcome-modal">
+        <div class="welcome-overlay" id="welcomeOverlay"></div>
+        <div class="welcome-content">
+            <div class="welcome-header">
+                <h2>👋 Welcome to SAM.gov Matcher!</h2>
+            </div>
+            <div class="welcome-body">
+                <p class="welcome-intro">Find government contract opportunities tailored to your business.</p>
+
+                <div class="welcome-steps">
+                    <div class="welcome-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>🔍 New Search</h4>
+                            <p>Click "New Search" to set your criteria: ZIP code, NAICS codes, distance, contract value, and more.</p>
+                        </div>
+                    </div>
+
+                    <div class="welcome-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>📊 View Results</h4>
+                            <p>Browse opportunities matched to your preferences. Each card shows key details like deadline, agency, and set-aside type.</p>
+                        </div>
+                    </div>
+
+                    <div class="welcome-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>🔓 Reveal Details</h4>
+                            <p>Click "Reveal Missing" on any opportunity to extract award amount and location from the description.</p>
+                        </div>
+                    </div>
+
+                    <div class="welcome-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>📥 Save & Load</h4>
+                            <p>Your searches are saved by email. Return anytime and click "Load My Opportunities" to see your results.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="welcome-note">
+                    <strong>⚠️ Daily Limit:</strong> You have <strong>10 searches per day</strong> (resets every 24 hours). Use them wisely!
+                </div>
+
+                <div class="welcome-actions">
+                    <button type="button" class="btn-get-started" id="welcomeCloseBtn">
+                        🚀 Get Started
+                    </button>
+                </div>
+
+                <label class="welcome-checkbox">
+                    <input type="checkbox" id="dontShowAgain">
+                    <span>Don't show this again</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

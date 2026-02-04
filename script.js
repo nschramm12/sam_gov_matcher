@@ -9,6 +9,12 @@ const loadOpportunitiesBtn = document.getElementById('loadOpportunitiesBtn');
 const newSearchBtn = document.getElementById('newSearchBtn');
 const apiCounterValue = document.getElementById('apiCounterValue');
 
+// DOM Elements - Welcome Modal
+const welcomeModal = document.getElementById('welcomeModal');
+const welcomeOverlay = document.getElementById('welcomeOverlay');
+const welcomeCloseBtn = document.getElementById('welcomeCloseBtn');
+const dontShowAgainCheckbox = document.getElementById('dontShowAgain');
+
 // DOM Elements - Modal
 const searchModal = document.getElementById('searchModal');
 const modalOverlay = document.getElementById('modalOverlay');
@@ -64,7 +70,36 @@ const DEFAULTS = {
     rankings: { value: 1, feasibility: 2, location: 3, special: 4, effort: 5 }
 };
 
-// ========== MODAL FUNCTIONS ==========
+// ========== WELCOME MODAL FUNCTIONS ==========
+
+function showWelcomeModal() {
+    welcomeModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideWelcomeModal() {
+    // Check if "don't show again" is checked
+    if (dontShowAgainCheckbox && dontShowAgainCheckbox.checked) {
+        localStorage.setItem('samgov_hide_welcome', 'true');
+    }
+    welcomeModal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function checkShowWelcome() {
+    const hideWelcome = localStorage.getItem('samgov_hide_welcome');
+    if (hideWelcome !== 'true') {
+        showWelcomeModal();
+    } else {
+        welcomeModal.classList.add('hidden');
+    }
+}
+
+// Welcome modal event listeners
+if (welcomeCloseBtn) welcomeCloseBtn.addEventListener('click', hideWelcomeModal);
+if (welcomeOverlay) welcomeOverlay.addEventListener('click', hideWelcomeModal);
+
+// ========== SEARCH MODAL FUNCTIONS ==========
 
 function openSearchModal() {
     searchModal.classList.remove('hidden');
