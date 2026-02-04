@@ -70,8 +70,8 @@ header h1 {
     box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
 }
 
-/* Email Section */
-.email-section {
+/* Previous Searches Section */
+.searches-section {
     background: #f8f9fa;
     padding: 25px;
     border-radius: 12px;
@@ -79,19 +79,59 @@ header h1 {
     border: 2px solid #e9ecef;
 }
 
-.email-input-row {
+.search-history-row {
     display: flex;
-    gap: 15px;
+    gap: 10px;
     align-items: stretch;
 }
 
-.email-input-row input {
+.search-dropdown {
     flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
 }
 
-.email-input-row .btn-primary {
+.search-dropdown:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.search-dropdown:disabled {
+    background: #f8f9fa;
+    cursor: not-allowed;
+    color: #adb5bd;
+}
+
+.search-history-row .btn-primary {
     flex: 0 0 auto;
     padding: 12px 24px;
+}
+
+.btn-delete-search {
+    flex: 0 0 auto;
+    padding: 12px 14px;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-delete-search:hover {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-delete-search:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* API Counter Row */
@@ -751,6 +791,15 @@ footer {
 
     .api-counter-row {
         justify-content: center;
+    }
+
+    .search-history-row {
+        flex-direction: column;
+    }
+
+    .search-history-row .btn-primary,
+    .search-history-row .btn-delete-search {
+        width: 100%;
     }
 }
 

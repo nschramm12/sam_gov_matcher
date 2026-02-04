@@ -27,21 +27,22 @@
                 <div class="status-text" id="statusText">Waiting...</div>
             </div>
 
-            <!-- Email Login Section -->
-            <div class="email-section">
+            <!-- Previous Searches Section -->
+            <div class="searches-section">
                 <div class="form-group">
-                    <label for="mainEmail">Your Email:</label>
-                    <div class="email-input-row">
-                        <input
-                            type="email"
-                            id="mainEmail"
-                            placeholder="your.email@company.com"
-                        >
-                        <button type="button" class="btn-primary" id="loadOpportunitiesBtn">
-                            📥 Load My Opportunities
+                    <label for="searchHistory">Previous Searches:</label>
+                    <div class="search-history-row">
+                        <select id="searchHistory" class="search-dropdown">
+                            <option value="">-- Select a previous search --</option>
+                        </select>
+                        <button type="button" class="btn-primary" id="loadSearchBtn">
+                            📥 Load
+                        </button>
+                        <button type="button" class="btn-delete-search" id="deleteSearchBtn" title="Delete selected search">
+                            🗑️
                         </button>
                     </div>
-                    <small>Enter your email to view your saved opportunities</small>
+                    <small>Select from your last 10 searches to reload results</small>
                 </div>
             </div>
 
@@ -57,7 +58,7 @@
             <div id="opportunitiesSection" class="opportunities-section">
                 <h2>📋 Your Opportunities</h2>
                 <div id="opportunitiesContent">
-                    <p class="empty-state">Enter your email and click "Load My Opportunities" to view your saved searches, or click "New Search" to find new opportunities.</p>
+                    <p class="empty-state">Select a previous search from the dropdown or click "New Search" to find opportunities.</p>
                 </div>
             </div>
 
@@ -397,8 +398,8 @@
                     <div class="welcome-step">
                         <div class="step-number">4</div>
                         <div class="step-content">
-                            <h4>📥 Save & Load</h4>
-                            <p>Your searches are saved by email. Return anytime and click "Load My Opportunities" to see your results.</p>
+                            <h4>📥 Previous Searches</h4>
+                            <p>Your last 10 searches are saved automatically. Use the dropdown to reload any previous search results.</p>
                         </div>
                     </div>
                 </div>

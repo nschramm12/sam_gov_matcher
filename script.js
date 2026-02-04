@@ -4,10 +4,14 @@ const statusIcon = document.getElementById('statusIcon');
 const statusText = document.getElementById('statusText');
 const opportunitiesSection = document.getElementById('opportunitiesSection');
 const opportunitiesContent = document.getElementById('opportunitiesContent');
-const mainEmailInput = document.getElementById('mainEmail');
-const loadOpportunitiesBtn = document.getElementById('loadOpportunitiesBtn');
+const searchHistoryDropdown = document.getElementById('searchHistory');
+const loadSearchBtn = document.getElementById('loadSearchBtn');
+const deleteSearchBtn = document.getElementById('deleteSearchBtn');
 const newSearchBtn = document.getElementById('newSearchBtn');
 const apiCounterValue = document.getElementById('apiCounterValue');
+
+// Max saved searches
+const MAX_SAVED_SEARCHES = 10;
 
 // DOM Elements - Welcome Modal
 const welcomeModal = document.getElementById('welcomeModal');
@@ -103,16 +107,172 @@ if (welcomeOverlay) welcomeOverlay.addEventListener('click', hideWelcomeModal);
 const showHelpBtn = document.getElementById('showHelpBtn');
 if (showHelpBtn) showHelpBtn.addEventListener('click', showWelcomeModal);
 
+// ========== SEARCH HISTORY FUNCTIONS ==========
+
+function getSavedSearches() {
+    try {
+        const searches = JSON.parse(localStorage.getItem('samgov_search_history') || '[]');
+        return Array.isArray(searches) ? searches : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveSearch(searchData) {
+    const searches = getSavedSearches();
+
+    // Create search entry with metadata
+    const searchEntry = {
+        id: `search_${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        label: createSearchLabel(searchData.criteria),
+        criteria: searchData.criteria,
+        opportunities: searchData.opportunities
+    };
+
+    // Add to beginning of array
+    searches.unshift(searchEntry);
+
+    // Keep only the last MAX_SAVED_SEARCHES
+    if (searches.length > MAX_SAVED_SEARCHES) {
+        searches.splice(MAX_SAVED_SEARCHES);
+    }
+
+    localStorage.setItem('samgov_search_history', JSON.stringify(searches));
+    populateSearchDropdown();
+
+    return searchEntry.id;
+}
+
+function createSearchLabel(criteria) {
+    const date = new Date();
+    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    // Build a descriptive label
+    const parts = [];
+    if (criteria.naics_filter) {
+        const naics = criteria.naics_filter.split(',')[0].trim();
+        parts.push(`NAICS: ${naics}`);
+    }
+    if (criteria.company_zip) {
+        parts.push(`ZIP: ${criteria.company_zip}`);
+    }
+
+    const description = parts.length > 0 ? parts.join(', ') : 'Search';
+    return `${dateStr} ${timeStr} - ${description}`;
+}
+
+function populateSearchDropdown() {
+    const searches = getSavedSearches();
+
+    // Clear existing options except the placeholder
+    searchHistoryDropdown.innerHTML = '<option value="">-- Select a previous search --</option>';
+
+    if (searches.length === 0) {
+        searchHistoryDropdown.disabled = true;
+        loadSearchBtn.disabled = true;
+        deleteSearchBtn.disabled = true;
+        return;
+    }
+
+    searchHistoryDropdown.disabled = false;
+
+    searches.forEach(search => {
+        const option = document.createElement('option');
+        option.value = search.id;
+        const oppCount = search.opportunities ? search.opportunities.length : 0;
+        option.textContent = `${search.label} (${oppCount} results)`;
+        searchHistoryDropdown.appendChild(option);
+    });
+}
+
+function loadSelectedSearch() {
+    const selectedId = searchHistoryDropdown.value;
+    if (!selectedId) {
+        showStatus('error', 'Please select a search to load');
+        return;
+    }
+
+    const searches = getSavedSearches();
+    const search = searches.find(s => s.id === selectedId);
+
+    if (!search) {
+        showStatus('error', 'Search not found');
+        return;
+    }
+
+    if (search.opportunities && search.opportunities.length > 0) {
+        displayOpportunities(search.opportunities);
+        showStatus('success', `Loaded ${search.opportunities.length} opportunities`);
+        setTimeout(() => hideStatus(), 2000);
+    } else {
+        opportunitiesContent.innerHTML = `
+            <p class="empty-state">This search returned no opportunities.</p>
+        `;
+    }
+}
+
+function deleteSelectedSearch() {
+    const selectedId = searchHistoryDropdown.value;
+    if (!selectedId) {
+        showStatus('error', 'Please select a search to delete');
+        return;
+    }
+
+    if (!confirm('Delete this saved search?')) {
+        return;
+    }
+
+    let searches = getSavedSearches();
+    searches = searches.filter(s => s.id !== selectedId);
+    localStorage.setItem('samgov_search_history', JSON.stringify(searches));
+
+    populateSearchDropdown();
+    opportunitiesContent.innerHTML = `
+        <p class="empty-state">Select a previous search or click "New Search" to find opportunities.</p>
+    `;
+    showStatus('success', 'Search deleted');
+    setTimeout(() => hideStatus(), 2000);
+}
+
+function updateCurrentSearchOpportunities(opportunities) {
+    // Update the most recent search (or currently selected) with new opportunity data
+    const selectedId = searchHistoryDropdown.value;
+    let searches = getSavedSearches();
+
+    if (selectedId) {
+        // Update the selected search
+        const index = searches.findIndex(s => s.id === selectedId);
+        if (index !== -1) {
+            searches[index].opportunities = opportunities;
+            localStorage.setItem('samgov_search_history', JSON.stringify(searches));
+        }
+    } else if (searches.length > 0) {
+        // Update the most recent search
+        searches[0].opportunities = opportunities;
+        localStorage.setItem('samgov_search_history', JSON.stringify(searches));
+    }
+}
+
+// Search history event listeners
+if (loadSearchBtn) loadSearchBtn.addEventListener('click', loadSelectedSearch);
+if (deleteSearchBtn) deleteSearchBtn.addEventListener('click', deleteSelectedSearch);
+
+// Enable/disable buttons based on dropdown selection
+if (searchHistoryDropdown) {
+    searchHistoryDropdown.addEventListener('change', () => {
+        const hasSelection = searchHistoryDropdown.value !== '';
+        loadSearchBtn.disabled = !hasSelection;
+        deleteSearchBtn.disabled = !hasSelection;
+    });
+}
+
 // ========== SEARCH MODAL FUNCTIONS ==========
 
 function openSearchModal() {
     searchModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-
-    // Sync email from main page to modal
-    if (mainEmailInput.value) {
-        document.getElementById('userEmail').value = mainEmailInput.value;
-    }
 }
 
 function closeSearchModal() {
@@ -223,38 +383,6 @@ if (resetBtn) resetBtn.addEventListener('click', () => {
     document.getElementById('includeAwarded').checked = DEFAULTS.include_awarded;
     document.getElementById('requireLocation').checked = DEFAULTS.require_location;
     document.getElementById('specialRequest').value = DEFAULTS.special_request;
-});
-
-// ========== LOAD OPPORTUNITIES (main page) ==========
-
-loadOpportunitiesBtn.addEventListener('click', async () => {
-    const email = mainEmailInput.value.trim();
-
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        showStatus('error', 'Please enter a valid email address');
-        return;
-    }
-
-    // Save email to localStorage
-    localStorage.setItem('samgov_user_email', email);
-
-    // Check for saved opportunities
-    const savedOpportunities = localStorage.getItem(`samgov_opportunities_${email}`);
-
-    if (savedOpportunities) {
-        try {
-            const opportunities = JSON.parse(savedOpportunities);
-            showStatus('success', 'Opportunities loaded!');
-            setTimeout(() => hideStatus(), 2000);
-            displayOpportunities(opportunities);
-        } catch (error) {
-            showStatus('error', 'Error loading saved opportunities');
-        }
-    } else {
-        opportunitiesContent.innerHTML = `
-            <p class="empty-state">No saved opportunities found for this email. Click "New Search" to find opportunities.</p>
-        `;
-    }
 });
 
 // ========== LOAD SEARCH SETTINGS ==========
@@ -618,11 +746,8 @@ async function revealDetails(index) {
         button.classList.add('revealed');
         button.disabled = true;
 
-        // Save updated opportunities to localStorage
-        const userEmail = mainEmailInput.value.trim() || localStorage.getItem('samgov_user_email');
-        if (userEmail) {
-            localStorage.setItem(`samgov_opportunities_${userEmail}`, JSON.stringify(window.currentOpportunities));
-        }
+        // Update current search in history with revealed data
+        updateCurrentSearchOpportunities(window.currentOpportunities);
 
     } catch (error) {
         console.error('Reveal details error:', error);
@@ -704,10 +829,6 @@ form.addEventListener('submit', async (e) => {
         // Close modal
         closeSearchModal();
 
-        // Sync email to main page
-        mainEmailInput.value = userEmail;
-        localStorage.setItem('samgov_user_email', userEmail);
-
         showStatus('success', 'Search completed! ✨');
         setTimeout(() => hideStatus(), 3000);
 
@@ -743,9 +864,13 @@ form.addEventListener('submit', async (e) => {
 
         console.log('Extracted opportunities:', opportunities);
 
+        // Save search to history (even if no results)
+        saveSearch({
+            criteria: payload,
+            opportunities: opportunities || []
+        });
+
         if (opportunities && opportunities.length > 0) {
-            // Save opportunities to localStorage
-            localStorage.setItem(`samgov_opportunities_${userEmail}`, JSON.stringify(opportunities));
             displayOpportunities(opportunities);
         } else {
             // Debug: Show what the API returned when no opportunities found
@@ -893,15 +1018,15 @@ document.getElementById('companyZip').addEventListener('blur', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     initializeRanking();
     updateApiCounterDisplay();
+    populateSearchDropdown();
 
     // Show welcome modal if first visit
     checkShowWelcome();
 
-    // Load saved user email
+    // Load saved user email into search modal
     const savedEmail = localStorage.getItem('samgov_user_email');
     if (savedEmail) {
         document.getElementById('userEmail').value = savedEmail;
-        mainEmailInput.value = savedEmail;
     }
 
     // Load saved company ZIP
