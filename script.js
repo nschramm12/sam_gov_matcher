@@ -244,7 +244,8 @@ bidComfortSlider.addEventListener('input', (e) => {
 
 // ========== RESET FORM ==========
 
-resetBtn.addEventListener('click', () => {
+// Only add listener if reset button exists
+if (resetBtn) resetBtn.addEventListener('click', () => {
     document.getElementById('companyZip').value = DEFAULTS.company_zip;
     document.getElementById('naicsCodes').value = DEFAULTS.naics_filter;
     document.getElementById('pscCodes').value = DEFAULTS.psc_filter;
