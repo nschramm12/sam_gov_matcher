@@ -406,19 +406,39 @@ function collectFormData() {
 
 async function sendToMakecom(webhookUrl, payload) {
     try {
+        console.log('Sending to webhook:', webhookUrl);
+        console.log('Payload:', payload);
+
         const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
+        // Get the raw text first to see what we're dealing with
+        const rawText = await response.text();
+        console.log('Raw response text:', rawText);
+
+        // Try to parse as JSON
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (e) {
+            console.warn('Response is not valid JSON, treating as text');
+            data = { message: rawText };
+        }
+
+        console.log('Parsed data:', data);
         return { success: true, data };
     } catch (error) {
+        console.error('sendToMakecom error:', error);
         return { success: false, error: error.message };
     }
 }
@@ -721,6 +741,10 @@ form.addEventListener('submit', async (e) => {
 
     submitBtn.disabled = false;
 
+    // Debug: Log the full response
+    console.log('Search result:', result);
+    console.log('Result data:', result.data);
+
     if (result.success) {
         // Close modal
         closeSearchModal();
@@ -732,22 +756,64 @@ form.addEventListener('submit', async (e) => {
         showStatus('success', 'Search completed! ✨');
         setTimeout(() => hideStatus(), 3000);
 
-        // Process and display results
-        const opportunities = result.data.opportunities || result.data.matches || (Array.isArray(result.data) ? result.data : null);
+        // Debug: Log what we're looking for
+        console.log('Looking for opportunities in result.data:', result.data);
+        console.log('result.data.opportunities:', result.data?.opportunities);
+        console.log('result.data.matches:', result.data?.matches);
+        console.log('Is array?:', Array.isArray(result.data));
+
+        // Process and display results - check multiple possible response structures
+        let opportunities = null;
+
+        // Check if data itself is an array
+        if (Array.isArray(result.data)) {
+            opportunities = result.data;
+        }
+        // Check for nested opportunities array
+        else if (result.data?.opportunities && Array.isArray(result.data.opportunities)) {
+            opportunities = result.data.opportunities;
+        }
+        // Check for matches array
+        else if (result.data?.matches && Array.isArray(result.data.matches)) {
+            opportunities = result.data.matches;
+        }
+        // Check if data is an object with a results property
+        else if (result.data?.results && Array.isArray(result.data.results)) {
+            opportunities = result.data.results;
+        }
+        // Check if data is an object with a data property (nested)
+        else if (result.data?.data && Array.isArray(result.data.data)) {
+            opportunities = result.data.data;
+        }
+
+        console.log('Extracted opportunities:', opportunities);
 
         if (opportunities && opportunities.length > 0) {
             // Save opportunities to localStorage
             localStorage.setItem(`samgov_opportunities_${userEmail}`, JSON.stringify(opportunities));
             displayOpportunities(opportunities);
         } else {
+            // Debug: Show what the API returned when no opportunities found
+            console.log('No opportunities array found. Full result.data:', JSON.stringify(result.data, null, 2));
+
+            // Try to provide helpful debug info
+            let debugInfo = '';
+            if (result.data && typeof result.data === 'object') {
+                const keys = Object.keys(result.data);
+                debugInfo = `<br><small style="color: #999;">Response keys: ${keys.join(', ') || 'none'}</small>`;
+            }
+
             opportunitiesContent.innerHTML = `
                 <div style="text-align: center; padding: 40px;">
                     <p style="color: #28a745; font-weight: 600; margin-bottom: 10px;">✅ Search completed!</p>
-                    <p style="color: #6c757d;">${result.data.message || 'No matching opportunities found. Try adjusting your criteria.'}</p>
+                    <p style="color: #6c757d;">${result.data?.message || 'No matching opportunities found. Try adjusting your criteria.'}</p>
+                    ${debugInfo}
+                    <p style="margin-top: 15px; font-size: 12px; color: #999;">Check browser console (F12) for full response data.</p>
                 </div>
             `;
         }
     } else {
+        console.error('Search failed:', result.error);
         showStatus('error', `Error: ${result.error}`);
     }
 });
