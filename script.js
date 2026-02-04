@@ -8,7 +8,17 @@ const searchHistoryDropdown = document.getElementById('searchHistory');
 const loadSearchBtn = document.getElementById('loadSearchBtn');
 const deleteSearchBtn = document.getElementById('deleteSearchBtn');
 const newSearchBtn = document.getElementById('newSearchBtn');
+const dailyAlertBtn = document.getElementById('dailyAlertBtn');
 const apiCounterValue = document.getElementById('apiCounterValue');
+
+// DOM Elements - Daily Alert Modal
+const dailyAlertModal = document.getElementById('dailyAlertModal');
+const dailyAlertOverlay = document.getElementById('dailyAlertOverlay');
+const dailyAlertCloseBtn = document.getElementById('dailyAlertCloseBtn');
+const alertEmail = document.getElementById('alertEmail');
+const alertSearchTemplate = document.getElementById('alertSearchTemplate');
+const alertStatus = document.getElementById('alertStatus');
+const toggleAlertBtn = document.getElementById('toggleAlertBtn');
 
 // Max saved searches
 const MAX_SAVED_SEARCHES = 10;
@@ -267,6 +277,185 @@ if (searchHistoryDropdown) {
         deleteSearchBtn.disabled = !hasSelection;
     });
 }
+
+// ========== DAILY ALERT FUNCTIONS ==========
+
+function getDailyAlertSettings() {
+    try {
+        return JSON.parse(localStorage.getItem('samgov_daily_alert') || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveDailyAlertSettings(settings) {
+    localStorage.setItem('samgov_daily_alert', JSON.stringify(settings));
+}
+
+function openDailyAlertModal() {
+    dailyAlertModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // Populate search template dropdown
+    populateAlertSearchDropdown();
+
+    // Load existing settings
+    const settings = getDailyAlertSettings();
+    if (settings.email) {
+        alertEmail.value = settings.email;
+    }
+    if (settings.searchId) {
+        alertSearchTemplate.value = settings.searchId;
+    }
+
+    updateAlertStatusDisplay(settings.enabled || false);
+}
+
+function closeDailyAlertModal() {
+    dailyAlertModal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function populateAlertSearchDropdown() {
+    const searches = getSavedSearches();
+    alertSearchTemplate.innerHTML = '<option value="">-- Select a previous search --</option>';
+
+    searches.forEach(search => {
+        const option = document.createElement('option');
+        option.value = search.id;
+        option.textContent = search.label;
+        alertSearchTemplate.appendChild(option);
+    });
+}
+
+function updateAlertStatusDisplay(isEnabled) {
+    const indicator = alertStatus.querySelector('.status-indicator');
+    const text = alertStatus.querySelector('.status-text');
+
+    if (isEnabled) {
+        indicator.classList.remove('off');
+        indicator.classList.add('on');
+        text.innerHTML = 'Daily alerts are currently <strong style="color: #28a745;">ON</strong>';
+        toggleAlertBtn.textContent = '🔕 Disable Daily Alerts';
+        toggleAlertBtn.classList.add('active');
+        dailyAlertBtn.textContent = '🔔 Daily Alert: ON';
+        dailyAlertBtn.classList.add('active');
+    } else {
+        indicator.classList.remove('on');
+        indicator.classList.add('off');
+        text.innerHTML = 'Daily alerts are currently <strong>OFF</strong>';
+        toggleAlertBtn.textContent = '🔔 Enable Daily Alerts';
+        toggleAlertBtn.classList.remove('active');
+        dailyAlertBtn.textContent = '🔔 Daily Alert: OFF';
+        dailyAlertBtn.classList.remove('active');
+    }
+}
+
+async function toggleDailyAlert() {
+    const settings = getDailyAlertSettings();
+    const isCurrentlyEnabled = settings.enabled || false;
+
+    // Validate inputs if enabling
+    if (!isCurrentlyEnabled) {
+        const email = alertEmail.value.trim();
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showStatus('error', 'Please enter a valid email address');
+            return;
+        }
+
+        const searchId = alertSearchTemplate.value;
+        if (!searchId) {
+            showStatus('error', 'Please select a search to use as template');
+            return;
+        }
+
+        // Get the search criteria
+        const searches = getSavedSearches();
+        const selectedSearch = searches.find(s => s.id === searchId);
+        if (!selectedSearch) {
+            showStatus('error', 'Selected search not found');
+            return;
+        }
+
+        // Save settings and enable
+        const newSettings = {
+            enabled: true,
+            email: email,
+            searchId: searchId,
+            criteria: selectedSearch.criteria,
+            enabledAt: new Date().toISOString()
+        };
+
+        // Send to webhook to enable daily alerts
+        toggleAlertBtn.disabled = true;
+        toggleAlertBtn.textContent = '⏳ Enabling...';
+
+        try {
+            const response = await fetch(SEARCH_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'enable_daily_alert',
+                    email: email,
+                    criteria: selectedSearch.criteria,
+                    searchLabel: selectedSearch.label
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to enable daily alerts');
+            }
+
+            saveDailyAlertSettings(newSettings);
+            updateAlertStatusDisplay(true);
+            showStatus('success', 'Daily alerts enabled! You\'ll receive emails for new opportunities.');
+            setTimeout(() => hideStatus(), 3000);
+
+        } catch (error) {
+            console.error('Enable alert error:', error);
+            showStatus('error', 'Failed to enable alerts. Please try again.');
+        } finally {
+            toggleAlertBtn.disabled = false;
+        }
+
+    } else {
+        // Disable alerts
+        toggleAlertBtn.disabled = true;
+        toggleAlertBtn.textContent = '⏳ Disabling...';
+
+        try {
+            const response = await fetch(SEARCH_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'disable_daily_alert',
+                    email: settings.email
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to disable daily alerts');
+            }
+
+            saveDailyAlertSettings({ ...settings, enabled: false });
+            updateAlertStatusDisplay(false);
+            showStatus('success', 'Daily alerts disabled.');
+            setTimeout(() => hideStatus(), 2000);
+
+        } catch (error) {
+            console.error('Disable alert error:', error);
+            showStatus('error', 'Failed to disable alerts. Please try again.');
+        } finally {
+            toggleAlertBtn.disabled = false;
+        }
+    }
+}
+
+// Daily Alert event listeners
+if (dailyAlertBtn) dailyAlertBtn.addEventListener('click', openDailyAlertModal);
+if (dailyAlertCloseBtn) dailyAlertCloseBtn.addEventListener('click', closeDailyAlertModal);
+if (dailyAlertOverlay) dailyAlertOverlay.addEventListener('click', closeDailyAlertModal);
+if (toggleAlertBtn) toggleAlertBtn.addEventListener('click', toggleDailyAlert);
 
 // ========== SEARCH MODAL FUNCTIONS ==========
 
@@ -1020,13 +1209,21 @@ document.addEventListener('DOMContentLoaded', () => {
     updateApiCounterDisplay();
     populateSearchDropdown();
 
+    // Initialize daily alert button state
+    const alertSettings = getDailyAlertSettings();
+    if (alertSettings.enabled) {
+        dailyAlertBtn.textContent = '🔔 Daily Alert: ON';
+        dailyAlertBtn.classList.add('active');
+    }
+
     // Show welcome modal if first visit
     checkShowWelcome();
 
-    // Load saved user email into search modal
+    // Load saved user email into search modal and alert modal
     const savedEmail = localStorage.getItem('samgov_user_email');
     if (savedEmail) {
         document.getElementById('userEmail').value = savedEmail;
+        if (alertEmail) alertEmail.value = savedEmail;
     }
 
     // Load saved company ZIP

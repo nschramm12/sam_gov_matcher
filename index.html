@@ -14,9 +14,14 @@
                     <h1>🎯 SAM.gov Opportunity Matcher</h1>
                     <p class="subtitle">Find and track government contract opportunities</p>
                 </div>
-                <button type="button" class="btn-new-search" id="newSearchBtn">
-                    🔍 New Search
-                </button>
+                <div class="header-buttons">
+                    <button type="button" class="btn-daily-alert" id="dailyAlertBtn" title="Enable daily email alerts">
+                        🔔 Daily Alert: OFF
+                    </button>
+                    <button type="button" class="btn-new-search" id="newSearchBtn">
+                        🔍 New Search
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -360,6 +365,57 @@
         </div>
     </div>
 
+    <!-- Daily Alert Modal -->
+    <div id="dailyAlertModal" class="modal hidden">
+        <div class="modal-overlay" id="dailyAlertOverlay"></div>
+        <div class="modal-content daily-alert-modal">
+            <div class="modal-header">
+                <h2>🔔 Daily Alert Settings</h2>
+                <button type="button" class="modal-close" id="dailyAlertCloseBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="alert-description">
+                    Get an email notification when new opportunities match your search criteria.
+                    Uses <strong>1 search credit per day</strong> when enabled.
+                </p>
+
+                <div class="form-group">
+                    <label for="alertEmail">Email for Notifications: <span class="required">*</span></label>
+                    <input
+                        type="email"
+                        id="alertEmail"
+                        placeholder="your.email@company.com"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="alertSearchTemplate">Use Search Settings From:</label>
+                    <select id="alertSearchTemplate" class="search-dropdown">
+                        <option value="">-- Select a previous search --</option>
+                    </select>
+                    <small>Select which search criteria to use for daily alerts</small>
+                </div>
+
+                <div class="alert-status" id="alertStatus">
+                    <span class="status-indicator off"></span>
+                    <span class="status-text">Daily alerts are currently <strong>OFF</strong></span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-enable-alert" id="toggleAlertBtn">
+                        🔔 Enable Daily Alerts
+                    </button>
+                </div>
+
+                <div class="alert-info">
+                    <p>📧 You'll receive an email only when <strong>new</strong> opportunities are found that you haven't seen before.</p>
+                    <p>⏰ Searches run automatically once per day.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Welcome/Directions Modal -->
     <div id="welcomeModal" class="welcome-modal">
         <div class="welcome-overlay" id="welcomeOverlay"></div>
@@ -405,7 +461,8 @@
                 </div>
 
                 <div class="welcome-note">
-                    <strong>⚠️ Daily Limit:</strong> You have <strong>10 searches per day</strong> (resets every 24 hours). Use them wisely!
+                    <strong>⚠️ Daily Limit:</strong> You have <strong>10 searches per day</strong> (resets every 24 hours).<br>
+                    <strong>💡 Tip:</strong> Enable <strong>Daily Alerts</strong> to get email notifications for new opportunities!
                 </div>
 
                 <div class="welcome-actions">
