@@ -678,6 +678,24 @@ footer {
     font-size: 14px;
 }
 
+.btn-help {
+    background: transparent;
+    border: 1px solid #adb5bd;
+    color: #6c757d;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s ease;
+}
+
+.btn-help:hover {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     body {

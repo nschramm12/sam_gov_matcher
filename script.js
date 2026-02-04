@@ -99,6 +99,10 @@ function checkShowWelcome() {
 if (welcomeCloseBtn) welcomeCloseBtn.addEventListener('click', hideWelcomeModal);
 if (welcomeOverlay) welcomeOverlay.addEventListener('click', hideWelcomeModal);
 
+// Help button to show welcome modal again
+const showHelpBtn = document.getElementById('showHelpBtn');
+if (showHelpBtn) showHelpBtn.addEventListener('click', showWelcomeModal);
+
 // ========== SEARCH MODAL FUNCTIONS ==========
 
 function openSearchModal() {
@@ -889,6 +893,9 @@ document.getElementById('companyZip').addEventListener('blur', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     initializeRanking();
     updateApiCounterDisplay();
+
+    // Show welcome modal if first visit
+    checkShowWelcome();
 
     // Load saved user email
     const savedEmail = localStorage.getItem('samgov_user_email');
