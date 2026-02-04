@@ -858,27 +858,39 @@ async function revealDetails(index) {
     button.disabled = true;
     button.textContent = '⏳ Revealing...';
 
+    // Debug: Log the opportunity object to see all available fields
+    console.log('Opportunity object for reveal:', opportunity);
+    console.log('Available keys:', Object.keys(opportunity));
+
+    // Get noticeId - check multiple possible property names
+    const noticeId = opportunity.noticeId || opportunity.notice_id || opportunity.NoticeId ||
+                     opportunity.id || opportunity.opportunityId || opportunity.opportunity_id || '';
+
+    console.log('Extracted noticeId:', noticeId);
+
     // Build payload
     const payload = {
         action: 'reveal_details',
         timestamp: new Date().toISOString(),
-        opp_noticeId: opportunity.noticeId || '',
-        opp_title: opportunity.title || '',
-        opp_solicitationNumber: opportunity.solicitationNumber || '',
-        opp_type: opportunity.type || '',
-        opp_baseType: opportunity.baseType || '',
-        opp_typeOfSetAside: opportunity.typeOfSetAside || '',
-        opp_naicsCodes: opportunity.naicsCodes || '',
-        opp_pscCode: opportunity.pscCode || '',
-        opp_popZIP: opportunity.popZIP || '',
-        opp_postedDate: opportunity.postedDate || '',
-        opp_responseDeadline: opportunity.responseDeadline || '',
-        opp_fullParentPathName: opportunity.fullParentPathName || '',
-        opp_pocFullName: opportunity.pocFullName || '',
-        opp_pocEmail: opportunity.pocEmail || '',
-        opp_pocPhone: opportunity.pocPhone || '',
-        opp_uiLink: opportunity.uiLink || ''
+        opp_noticeId: noticeId,
+        opp_title: opportunity.title || opportunity.Title || '',
+        opp_solicitationNumber: opportunity.solicitationNumber || opportunity.solicitation_number || '',
+        opp_type: opportunity.type || opportunity.Type || '',
+        opp_baseType: opportunity.baseType || opportunity.base_type || '',
+        opp_typeOfSetAside: opportunity.typeOfSetAside || opportunity.type_of_set_aside || '',
+        opp_naicsCodes: opportunity.naicsCodes || opportunity.naics_codes || opportunity.naicsCode || '',
+        opp_pscCode: opportunity.pscCode || opportunity.psc_code || '',
+        opp_popZIP: opportunity.popZIP || opportunity.pop_zip || opportunity.placeOfPerformanceZip || '',
+        opp_postedDate: opportunity.postedDate || opportunity.posted_date || '',
+        opp_responseDeadline: opportunity.responseDeadline || opportunity.response_deadline || '',
+        opp_fullParentPathName: opportunity.fullParentPathName || opportunity.full_parent_path_name || opportunity.agency || '',
+        opp_pocFullName: opportunity.pocFullName || opportunity.poc_full_name || '',
+        opp_pocEmail: opportunity.pocEmail || opportunity.poc_email || '',
+        opp_pocPhone: opportunity.pocPhone || opportunity.poc_phone || '',
+        opp_uiLink: opportunity.uiLink || opportunity.ui_link || opportunity.link || ''
     };
+
+    console.log('Reveal payload being sent:', payload);
 
     try {
         const response = await fetch(REVEAL_WEBHOOK_URL, {
