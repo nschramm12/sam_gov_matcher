@@ -271,6 +271,16 @@ header h1 {
     color: #adb5bd;
 }
 
+.revealed-data .data-value.found {
+    color: #28a745;
+}
+
+.revealed-data .data-value.not-found {
+    color: #dc3545;
+    font-size: 14px;
+    font-style: italic;
+}
+
 /* Main Content */
 main {
     padding: 40px;

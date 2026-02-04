@@ -385,10 +385,39 @@ function displayOpportunities(opportunities) {
         const deadline = opp.responseDeadline ? formatDate(opp.responseDeadline) : '-';
         const posted = opp.postedDate ? formatDate(opp.postedDate) : '-';
 
-        // Check if already revealed
-        const isRevealed = opp._revealed === true;
-        const awardAmount = opp._awardAmount || '--';
-        const locationZip = opp._locationZip || opp.popZIP || '--';
+        // Check for existing values from search results OR previously revealed
+        const hasAwardAmount = opp.award_amount != null || opp.awardAmount != null || opp._awardAmount != null;
+        const hasLocationZip = opp.popZIP != null || opp.location_zip != null || opp.locationZip != null || opp._locationZip != null;
+
+        // Get the actual values
+        const awardAmount = opp._awardAmount || opp.award_amount || opp.awardAmount;
+        const locationZip = opp._locationZip || opp.location_zip || opp.locationZip || opp.popZIP;
+
+        // Format award amount for display
+        let awardDisplay = '--';
+        let awardHasValue = false;
+        if (awardAmount != null && awardAmount !== '' && awardAmount !== 'null') {
+            const numAmount = typeof awardAmount === 'number' ? awardAmount : parseFloat(awardAmount);
+            if (!isNaN(numAmount)) {
+                awardDisplay = numAmount.toLocaleString();
+                awardHasValue = true;
+            } else {
+                awardDisplay = awardAmount; // Keep string value
+                awardHasValue = true;
+            }
+        }
+
+        // Format ZIP for display
+        let zipDisplay = '--';
+        let zipHasValue = false;
+        if (locationZip != null && locationZip !== '' && locationZip !== 'null') {
+            zipDisplay = locationZip;
+            zipHasValue = true;
+        }
+
+        // Determine if reveal is needed (missing at least one value)
+        const needsReveal = !awardHasValue || !zipHasValue;
+        const isFullyRevealed = opp._revealed === true || (awardHasValue && zipHasValue);
 
         html += `
             <div class="opportunity-card" data-index="${index}">
@@ -434,20 +463,23 @@ function displayOpportunities(opportunities) {
                 <div class="opportunity-actions">
                     <div class="revealed-data" id="award-${index}">
                         <span class="data-label">Award Amount</span>
-                        <span class="data-value ${isRevealed ? '' : 'pending'}" id="award-value-${index}">$${awardAmount}</span>
+                        <span class="data-value ${awardHasValue ? '' : 'pending'}" id="award-value-${index}">${awardHasValue ? '$' + awardDisplay : '--'}</span>
                     </div>
                     <div class="revealed-data" id="zip-${index}">
                         <span class="data-label">Location ZIP</span>
-                        <span class="data-value ${isRevealed ? '' : 'pending'}" id="zip-value-${index}">${locationZip}</span>
+                        <span class="data-value ${zipHasValue ? '' : 'pending'}" id="zip-value-${index}">${zipDisplay}</span>
                     </div>
-                    <button type="button"
-                            class="btn-reveal-details ${isRevealed ? 'revealed' : ''}"
-                            id="reveal-btn-${index}"
-                            onclick="revealDetails(${index})"
-                            ${isRevealed ? 'disabled' : ''}>
-                        ${isRevealed ? '✓ Revealed' : '🔍 Reveal Details'}
-                    </button>
-                    <small style="color: #6c757d; font-size: 11px; text-align: center;">Uses 1 API call</small>
+                    ${needsReveal ? `
+                        <button type="button"
+                                class="btn-reveal-details"
+                                id="reveal-btn-${index}"
+                                onclick="revealDetails(${index})">
+                            🔍 Reveal Missing
+                        </button>
+                        <small style="color: #6c757d; font-size: 11px; text-align: center;">Uses 1 API call</small>
+                    ` : `
+                        <div style="color: #28a745; font-size: 13px; font-weight: 600;">✓ Complete</div>
+                    `}
                 </div>
             </div>
         `;
@@ -518,25 +550,46 @@ async function revealDetails(index) {
         incrementApiCallCount();
 
         // Update display with revealed data
+        // Handle award_amount - could be a value or null (not found by AI)
         if (result.award_amount !== undefined) {
-            const formattedAmount = typeof result.award_amount === 'number'
-                ? result.award_amount.toLocaleString()
-                : result.award_amount;
-            awardValueEl.textContent = `$${formattedAmount}`;
-            awardValueEl.classList.remove('pending');
-            opportunity._awardAmount = formattedAmount;
+            if (result.award_amount !== null && result.award_amount !== '' && result.award_amount !== 'null') {
+                const formattedAmount = typeof result.award_amount === 'number'
+                    ? result.award_amount.toLocaleString()
+                    : result.award_amount;
+                awardValueEl.textContent = `$${formattedAmount}`;
+                awardValueEl.classList.remove('pending');
+                awardValueEl.classList.add('found');
+                opportunity._awardAmount = formattedAmount;
+            } else {
+                // AI agent couldn't find it in description
+                awardValueEl.textContent = 'Not found';
+                awardValueEl.classList.remove('pending');
+                awardValueEl.classList.add('not-found');
+                opportunity._awardAmount = null;
+            }
         }
 
-        if (result.location_zip) {
-            zipValueEl.textContent = result.location_zip;
-            zipValueEl.classList.remove('pending');
-            opportunity._locationZip = result.location_zip;
+        // Handle location_zip - could be a value or null (not found by AI)
+        if (result.location_zip !== undefined) {
+            if (result.location_zip !== null && result.location_zip !== '' && result.location_zip !== 'null') {
+                zipValueEl.textContent = result.location_zip;
+                zipValueEl.classList.remove('pending');
+                zipValueEl.classList.add('found');
+                opportunity._locationZip = result.location_zip;
+            } else {
+                // AI agent couldn't find it in description
+                zipValueEl.textContent = 'Not found';
+                zipValueEl.classList.remove('pending');
+                zipValueEl.classList.add('not-found');
+                opportunity._locationZip = null;
+            }
         }
 
-        // Mark as revealed
+        // Mark as revealed (attempted)
         opportunity._revealed = true;
-        button.textContent = '✓ Revealed';
+        button.textContent = '✓ Checked';
         button.classList.add('revealed');
+        button.disabled = true;
 
         // Save updated opportunities to localStorage
         const userEmail = mainEmailInput.value.trim() || localStorage.getItem('samgov_user_email');
