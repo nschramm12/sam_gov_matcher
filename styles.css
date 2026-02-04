@@ -94,17 +94,49 @@ header h1 {
     padding: 12px 24px;
 }
 
+/* API Actions Row */
+.api-actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+/* Refresh API Button */
+.btn-refresh-api {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-refresh-api:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+}
+
+.btn-refresh-api:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* API Counter */
 .api-counter {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
     gap: 10px;
-    padding: 15px 20px;
+    padding: 12px 20px;
     background: #fff3cd;
     border: 2px solid #ffc107;
     border-radius: 8px;
-    margin-bottom: 25px;
 }
 
 .api-counter-label {
@@ -641,6 +673,14 @@ footer {
     .api-counter {
         flex-direction: column;
         text-align: center;
+    }
+
+    .api-actions-row {
+        flex-direction: column;
+    }
+
+    .btn-refresh-api {
+        width: 100%;
     }
 }
 
