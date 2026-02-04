@@ -1,12 +1,21 @@
-// DOM Elements
-const form = document.getElementById('searchForm');
-const submitBtn = document.getElementById('submitBtn');
-const resetBtn = document.getElementById('resetBtn');
+// DOM Elements - Main Page
 const statusDisplay = document.getElementById('statusDisplay');
 const statusIcon = document.getElementById('statusIcon');
 const statusText = document.getElementById('statusText');
-const resultsSection = document.getElementById('resultsSection');
-const resultsContent = document.getElementById('resultsContent');
+const opportunitiesSection = document.getElementById('opportunitiesSection');
+const opportunitiesContent = document.getElementById('opportunitiesContent');
+const mainEmailInput = document.getElementById('mainEmail');
+const loadOpportunitiesBtn = document.getElementById('loadOpportunitiesBtn');
+const newSearchBtn = document.getElementById('newSearchBtn');
+const apiCounterValue = document.getElementById('apiCounterValue');
+
+// DOM Elements - Modal
+const searchModal = document.getElementById('searchModal');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalCloseBtn = document.getElementById('modalCloseBtn');
+const form = document.getElementById('searchForm');
+const submitBtn = document.getElementById('submitBtn');
+const resetBtn = document.getElementById('resetBtn');
 
 // Slider elements
 const minDaysSlider = document.getElementById('minDays');
@@ -18,43 +27,19 @@ const minValueDisplay = document.getElementById('minValueDisplay');
 const bidComfortSlider = document.getElementById('bidComfortDays');
 const bidComfortValue = document.getElementById('bidComfortDaysValue');
 
+// Webhook URL for revealing details (extracts award amount & ZIP from description)
+const REVEAL_WEBHOOK_URL = 'https://hook.us2.make.com/mgc2n9nvbpwi2bnv3n4g5i4q4jvydm5g';
+
+// API Call Counter (10 per day)
+const MAX_DAILY_CALLS = 10;
+
 // Ranking system data
 const rankingItems = [
-    {
-        id: 'value',
-        icon: '💰',
-        title: 'Contract Value',
-        description: 'Dollar amount of the contract',
-        rank: 1
-    },
-    {
-        id: 'feasibility',
-        icon: '⏱️',
-        title: 'Bid Feasibility',
-        description: 'Time available to prepare bid',
-        rank: 2
-    },
-    {
-        id: 'location',
-        icon: '📍',
-        title: 'Location Proximity',
-        description: 'Distance from your company',
-        rank: 3
-    },
-    {
-        id: 'special',
-        icon: '✨',
-        title: 'Custom Rules Match',
-        description: 'Fits your special requirements',
-        rank: 4
-    },
-    {
-        id: 'effort',
-        icon: '🔧',
-        title: 'Effort/Complexity',
-        description: 'Ease of bidding (fewer requirements)',
-        rank: 5
-    }
+    { id: 'value', icon: '💰', title: 'Contract Value', description: 'Dollar amount of the contract', rank: 1 },
+    { id: 'feasibility', icon: '⏱️', title: 'Bid Feasibility', description: 'Time available to prepare bid', rank: 2 },
+    { id: 'location', icon: '📍', title: 'Location Proximity', description: 'Distance from your company', rank: 3 },
+    { id: 'special', icon: '✨', title: 'Custom Rules Match', description: 'Fits your special requirements', rank: 4 },
+    { id: 'effort', icon: '🔧', title: 'Effort/Complexity', description: 'Ease of bidding (fewer requirements)', rank: 5 }
 ];
 
 // Default values
@@ -73,16 +58,86 @@ const DEFAULTS = {
     include_awarded: false,
     require_location: false,
     special_request: '',
-    rankings: {
-        value: 1,
-        feasibility: 2,
-        location: 3,
-        special: 4,
-        effort: 5
-    }
+    rankings: { value: 1, feasibility: 2, location: 3, special: 4, effort: 5 }
 };
 
-// Update all slider displays
+// ========== MODAL FUNCTIONS ==========
+
+function openSearchModal() {
+    searchModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // Sync email from main page to modal
+    if (mainEmailInput.value) {
+        document.getElementById('userEmail').value = mainEmailInput.value;
+    }
+}
+
+function closeSearchModal() {
+    searchModal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+// Modal event listeners
+newSearchBtn.addEventListener('click', openSearchModal);
+modalCloseBtn.addEventListener('click', closeSearchModal);
+modalOverlay.addEventListener('click', closeSearchModal);
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !searchModal.classList.contains('hidden')) {
+        closeSearchModal();
+    }
+});
+
+// ========== API COUNTER FUNCTIONS ==========
+
+function getApiCallCount() {
+    const today = new Date().toDateString();
+    const savedDate = localStorage.getItem('samgov_api_calls_date');
+    const savedCount = parseInt(localStorage.getItem('samgov_api_calls_count') || '0');
+
+    // Reset if it's a new day
+    if (savedDate !== today) {
+        localStorage.setItem('samgov_api_calls_date', today);
+        localStorage.setItem('samgov_api_calls_count', '0');
+        return 0;
+    }
+
+    return savedCount;
+}
+
+function incrementApiCallCount() {
+    const today = new Date().toDateString();
+    localStorage.setItem('samgov_api_calls_date', today);
+    const currentCount = getApiCallCount();
+    const newCount = currentCount + 1;
+    localStorage.setItem('samgov_api_calls_count', newCount.toString());
+    updateApiCounterDisplay();
+    return newCount;
+}
+
+function updateApiCounterDisplay() {
+    const usedCalls = getApiCallCount();
+    const remaining = MAX_DAILY_CALLS - usedCalls;
+    apiCounterValue.textContent = `${remaining}/${MAX_DAILY_CALLS}`;
+
+    // Change color based on remaining
+    if (remaining <= 2) {
+        apiCounterValue.style.color = '#dc3545';
+    } else if (remaining <= 5) {
+        apiCounterValue.style.color = '#ffc107';
+    } else {
+        apiCounterValue.style.color = '#856404';
+    }
+}
+
+function canMakeApiCall() {
+    return getApiCallCount() < MAX_DAILY_CALLS;
+}
+
+// ========== SLIDER EVENT LISTENERS ==========
+
 minDaysSlider.addEventListener('input', (e) => {
     minDaysValue.textContent = e.target.value;
 });
@@ -99,63 +154,51 @@ bidComfortSlider.addEventListener('input', (e) => {
     bidComfortValue.textContent = e.target.value;
 });
 
-// Reset form to defaults
+// ========== RESET FORM ==========
+
 resetBtn.addEventListener('click', () => {
-    // Don't reset user email/name or webhook URL
-    // Keep these fields as they are
-    
-    // Reset company info
     document.getElementById('companyZip').value = DEFAULTS.company_zip;
     document.getElementById('naicsCodes').value = DEFAULTS.naics_filter;
     document.getElementById('pscCodes').value = DEFAULTS.psc_filter;
-    
-    // Reset sliders
+
     minDaysSlider.value = DEFAULTS.min_days;
     minDaysValue.textContent = DEFAULTS.min_days;
-    
+
     maxDistanceSlider.value = DEFAULTS.max_distance;
     maxDistanceValue.textContent = DEFAULTS.max_distance;
-    
+
     minValueSlider.value = DEFAULTS.min_value;
     minValueDisplay.textContent = DEFAULTS.min_value.toLocaleString();
-    
+
     bidComfortSlider.value = DEFAULTS.bid_comfort_days;
     bidComfortValue.textContent = DEFAULTS.bid_comfort_days;
-    
-    // Reset checkboxes
+
     document.querySelectorAll('input[name="set_aside"]').forEach(checkbox => {
         checkbox.checked = DEFAULTS.set_asides.includes(checkbox.value);
     });
-    
-    // Reset toggles
+
     document.getElementById('includeAwarded').checked = DEFAULTS.include_awarded;
     document.getElementById('requireLocation').checked = DEFAULTS.require_location;
-    
-    // Reset special request
     document.getElementById('specialRequest').value = DEFAULTS.special_request;
-    
-    // Hide results
-    resultsSection.classList.add('hidden');
-    statusDisplay.classList.add('hidden');
 });
 
-// Load Previous Search button handler
+// ========== LOAD PREVIOUS SEARCH (in modal) ==========
+
 document.getElementById('loadPreviousBtn').addEventListener('click', async () => {
     const userEmail = document.getElementById('userEmail').value.trim();
-    
+
     if (!userEmail) {
         alert('Please enter your email address first');
         return;
     }
-    
-    // Check localStorage first
+
     const savedSearch = localStorage.getItem(`samgov_search_${userEmail}`);
-    
+
     if (savedSearch) {
         try {
             const searchData = JSON.parse(savedSearch);
             loadSearchSettings(searchData);
-            showStatus('success', 'Previous search loaded successfully!');
+            showStatus('success', 'Previous search settings loaded!');
             setTimeout(() => hideStatus(), 2000);
         } catch (error) {
             alert('Error loading saved search');
@@ -165,14 +208,45 @@ document.getElementById('loadPreviousBtn').addEventListener('click', async () =>
     }
 });
 
-// Function to load search settings into form
+// ========== LOAD OPPORTUNITIES (main page) ==========
+
+loadOpportunitiesBtn.addEventListener('click', async () => {
+    const email = mainEmailInput.value.trim();
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showStatus('error', 'Please enter a valid email address');
+        return;
+    }
+
+    // Save email to localStorage
+    localStorage.setItem('samgov_user_email', email);
+
+    // Check for saved opportunities
+    const savedOpportunities = localStorage.getItem(`samgov_opportunities_${email}`);
+
+    if (savedOpportunities) {
+        try {
+            const opportunities = JSON.parse(savedOpportunities);
+            showStatus('success', 'Opportunities loaded!');
+            setTimeout(() => hideStatus(), 2000);
+            displayOpportunities(opportunities);
+        } catch (error) {
+            showStatus('error', 'Error loading saved opportunities');
+        }
+    } else {
+        opportunitiesContent.innerHTML = `
+            <p class="empty-state">No saved opportunities found for this email. Click "New Search" to find opportunities.</p>
+        `;
+    }
+});
+
+// ========== LOAD SEARCH SETTINGS ==========
+
 function loadSearchSettings(data) {
-    // Load company info
     if (data.company_zip) document.getElementById('companyZip').value = data.company_zip;
     if (data.naics_filter) document.getElementById('naicsCodes').value = data.naics_filter;
     if (data.psc_filter !== undefined) document.getElementById('pscCodes').value = data.psc_filter;
-    
-    // Load sliders
+
     if (data.max_distance) {
         maxDistanceSlider.value = data.max_distance;
         maxDistanceValue.textContent = data.max_distance;
@@ -189,294 +263,226 @@ function loadSearchSettings(data) {
         minDaysSlider.value = data.min_days;
         minDaysValue.textContent = data.min_days;
     }
-    
-    // Load set-asides
+
     if (data.acceptable_set_asides) {
         const setAsides = data.acceptable_set_asides.split(',');
         document.querySelectorAll('input[name="set_aside"]').forEach(checkbox => {
             checkbox.checked = setAsides.includes(checkbox.value);
         });
     }
-    
-    // Load toggles
+
     if (data.include_awarded !== undefined) {
         document.getElementById('includeAwarded').checked = data.include_awarded;
     }
     if (data.require_location !== undefined) {
         document.getElementById('requireLocation').checked = data.require_location;
     }
-    
-    // Load special request
     if (data.special_request !== undefined) {
         document.getElementById('specialRequest').value = data.special_request;
     }
 }
 
-// Show status message
+// ========== STATUS DISPLAY ==========
+
 function showStatus(type, message) {
     statusDisplay.classList.remove('hidden', 'loading', 'success', 'error');
     statusDisplay.classList.add(type);
-    
-    const icons = {
-        loading: '⏳',
-        success: '✅',
-        error: '❌'
-    };
-    
+
+    const icons = { loading: '⏳', success: '✅', error: '❌' };
     statusIcon.textContent = icons[type] || '⏳';
     statusText.textContent = message;
 }
 
-// Hide status message
 function hideStatus() {
     statusDisplay.classList.add('hidden');
 }
 
-// Collect form data
+// ========== COLLECT FORM DATA ==========
+
 function collectFormData() {
     const formData = new FormData(form);
-    
-    // Get webhook URL
     const webhookUrl = formData.get('webhook_url');
-    
-    // Generate unique search ID (timestamp-based)
     const searchId = `SEARCH_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Get user info
+
     const userEmail = formData.get('user_email').trim();
     const userName = formData.get('user_name').trim() || userEmail.split('@')[0];
-    
-    // Get selected set-asides
+
     const setAsides = Array.from(document.querySelectorAll('input[name="set_aside"]:checked'))
-        .map(cb => cb.value)
-        .join(',');
-    
-    // Clean NAICS codes
-    const naicsCodes = formData.get('naics_filter')
-        .split(',')
-        .map(code => code.trim())
-        .filter(code => code)
-        .join(',');
-    
-    // Clean PSC codes
-    const pscCodes = formData.get('psc_filter')
-        .split(',')
-        .map(code => code.trim())
-        .filter(code => code)
-        .join(',');
-    
-    // Build payload
+        .map(cb => cb.value).join(',');
+
+    const naicsCodes = formData.get('naics_filter').split(',').map(code => code.trim()).filter(code => code).join(',');
+    const pscCodes = formData.get('psc_filter').split(',').map(code => code.trim()).filter(code => code).join(',');
+
     const payload = {
-        // User identification
         search_id: searchId,
         user_email: userEmail,
         user_name: userName,
-        
-        // Company info
         company_zip: formData.get('company_zip').trim(),
         naics_filter: naicsCodes,
         psc_filter: pscCodes,
         acceptable_set_asides: setAsides,
-        
-        // Preferences
         max_distance: parseInt(formData.get('max_distance')),
         min_value: parseInt(formData.get('min_value')),
         bid_comfort_days: parseInt(formData.get('bid_comfort_days')),
         min_days: parseInt(formData.get('min_days')),
-        
-        // Score rankings (1-5, where 1 = most important)
         location_rank: parseInt(formData.get('location_rank')),
         value_rank: parseInt(formData.get('value_rank')),
         feasibility_rank: parseInt(formData.get('feasibility_rank')),
         effort_rank: parseInt(formData.get('effort_rank')),
         special_rank: parseInt(formData.get('special_rank')),
-        
-        // Options
         include_awarded: document.getElementById('includeAwarded').checked,
         require_location: document.getElementById('requireLocation').checked,
-        
-        // Custom rules
         special_request: formData.get('special_request').trim(),
-        
-        // Timestamp
         search_timestamp: new Date().toISOString()
     };
-    
-    // Save to localStorage for "Load Previous Search"
+
     localStorage.setItem(`samgov_search_${userEmail}`, JSON.stringify(payload));
-    
-    return { webhookUrl, payload };
+
+    return { webhookUrl, payload, userEmail };
 }
 
-// Send data to Make.com webhook
+// ========== SEND TO MAKE.COM ==========
+
 async function sendToMakecom(webhookUrl, payload) {
     try {
         const response = await fetch(webhookUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         return { success: true, data };
-        
     } catch (error) {
         return { success: false, error: error.message };
     }
 }
 
-// Display results
-function displayResults(data) {
-    // Check if data has the expected structure
-    if (!data) {
-        resultsContent.innerHTML = `
-            <div style="padding: 20px; text-align: center;">
-                <p style="color: #28a745; font-weight: 600; margin-bottom: 10px;">✅ Search completed successfully!</p>
-                <p style="color: #6c757d;">Matched opportunities will appear in your results sheet.</p>
-                <p style="color: #6c757d; margin-top: 10px; font-size: 14px;">
-                    Check Make.com scenario execution logs for details.
-                </p>
-            </div>
+// ========== DISPLAY OPPORTUNITIES ==========
+
+function displayOpportunities(opportunities) {
+    if (!opportunities || !Array.isArray(opportunities) || opportunities.length === 0) {
+        opportunitiesContent.innerHTML = `
+            <p class="empty-state">No opportunities found. Try adjusting your search criteria.</p>
         `;
-        resultsSection.classList.remove('hidden');
         return;
     }
 
-    // Check for opportunities array (from Make.com webhook response)
-    const opportunities = data.opportunities || data.matches || (Array.isArray(data) ? data : null);
+    // Store globally for reveal functionality
+    window.currentOpportunities = opportunities;
 
-    let html = '<div style="padding: 10px;">';
+    let html = `<p style="color: #28a745; font-weight: 600; margin-bottom: 20px;">
+        Found ${opportunities.length} opportunities!
+    </p>`;
 
-    if (opportunities && Array.isArray(opportunities) && opportunities.length > 0) {
-        // Store opportunities globally for score calculation
-        window.currentOpportunities = opportunities;
+    html += `<div class="opportunities-cards">`;
 
-        html += `<p style="color: #28a745; font-weight: 600; margin-bottom: 15px;">
-            Found ${opportunities.length} opportunities!
-        </p>`;
+    opportunities.forEach((opp, index) => {
+        const deadline = opp.responseDeadline ? formatDate(opp.responseDeadline) : '-';
+        const posted = opp.postedDate ? formatDate(opp.postedDate) : '-';
 
-        // Create card rows for opportunities
-        html += `<div class="opportunities-cards" style="display: flex; flex-direction: column; gap: 20px;">`;
+        // Check if already revealed
+        const isRevealed = opp._revealed === true;
+        const awardAmount = opp._awardAmount || '--';
+        const locationZip = opp._locationZip || opp.popZIP || '--';
 
-        opportunities.forEach((opp, index) => {
-            const deadline = opp.responseDeadline ? formatDate(opp.responseDeadline) : '-';
-            const posted = opp.postedDate ? formatDate(opp.postedDate) : '-';
-
-            html += `
-                <div class="opportunity-card" data-index="${index}" style="display: flex; flex-direction: row; background: #fff; border: 2px solid #e9ecef; border-radius: 12px;">
-                    <div class="opportunity-content" style="flex: 1; padding: 25px;">
-                        <div class="opportunity-header" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 10px;">
-                            <h3 class="opportunity-title" style="font-size: 18px; font-weight: 600; color: #333; margin: 0; line-height: 1.3;">${escapeHtml(opp.title || 'Untitled')}</h3>
-                            ${opp.typeOfSetAside
-                                ? `<span class="set-aside-badge" style="background: #e7f3ff; color: #0066cc; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;">${escapeHtml(opp.typeOfSetAside)}</span>`
-                                : '<span class="set-aside-badge open" style="background: #d4edda; color: #28a745; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;">Open</span>'}
-                        </div>
-                        ${opp.solicitationNumber ? `<div class="opportunity-solicitation" style="font-size: 14px; color: #6c757d; margin-bottom: 15px;">${escapeHtml(opp.solicitationNumber)}</div>` : ''}
-
-                        <div class="opportunity-details" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 30px; margin: 15px 0;">
-                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Type:</span>
-                                <span class="detail-value" style="color: #333;">${escapeHtml(opp.type || opp.baseType || '-')}</span>
-                            </div>
-                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">NAICS:</span>
-                                <span class="detail-value" style="color: #333;">${escapeHtml(opp.naicsCodes || '-')}</span>
-                            </div>
-                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">PSC:</span>
-                                <span class="detail-value" style="color: #333;">${escapeHtml(opp.pscCode || '-')}</span>
-                            </div>
-                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Location:</span>
-                                <span class="detail-value" style="color: #333;">${escapeHtml(opp.popZIP || '-')}</span>
-                            </div>
-                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Posted:</span>
-                                <span class="detail-value" style="color: #333;">${posted}</span>
-                            </div>
-                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Deadline:</span>
-                                <span class="detail-value" style="color: #dc3545; font-weight: 600;">${deadline}</span>
-                            </div>
-                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5; grid-column: span 2;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Agency:</span>
-                                <span class="detail-value" style="color: #333;">${escapeHtml(opp.fullParentPathName || '-')}</span>
-                            </div>
-                            ${opp.pocFullName ? `
-                            <div class="detail-row" style="display: flex; gap: 10px; font-size: 14px; line-height: 1.5; grid-column: span 2;">
-                                <span class="detail-label" style="color: #6c757d; font-weight: 600; min-width: 80px;">Contact:</span>
-                                <span class="detail-value" style="color: #333;">
-                                    ${escapeHtml(opp.pocFullName)}
-                                    ${opp.pocEmail ? ` · <a href="mailto:${escapeHtml(opp.pocEmail)}" style="color: #667eea;">${escapeHtml(opp.pocEmail)}</a>` : ''}
-                                    ${opp.pocPhone ? ` · ${escapeHtml(opp.pocPhone)}` : ''}
-                                </span>
-                            </div>
-                            ` : ''}
-                        </div>
-
-                        ${opp.uiLink ? `<a href="${escapeHtml(opp.uiLink)}" target="_blank" class="view-link" style="display: inline-block; color: #667eea; font-size: 14px; font-weight: 600; text-decoration: none; margin-top: 10px;">View on SAM.gov →</a>` : ''}
-                    </div>
-
-                    <div class="opportunity-actions" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 2px solid #e9ecef; min-width: 180px; gap: 15px;">
-                        <div class="score-display" id="score-${index}" style="text-align: center;">
-                            <span class="score-label" style="display: block; font-size: 12px; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Match Score</span>
-                            <span class="score-value" style="display: block; font-size: 36px; font-weight: 700; color: #adb5bd;">--</span>
-                        </div>
-                        <button type="button" class="btn-calculate-score" onclick="calculateMatchScore(${index})" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;">
-                            📊 Calculate Score
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-
-        html += `</div>`;
-
-    } else if (data.message) {
-        html += `<p style="color: #667eea; font-weight: 600;">${escapeHtml(data.message)}</p>`;
-    } else {
         html += `
-            <p style="color: #28a745; font-weight: 600; margin-bottom: 10px;">✅ Search executed successfully!</p>
-            <p style="color: #6c757d;">Results are being processed in Make.com.</p>
-        `;
-    }
+            <div class="opportunity-card" data-index="${index}">
+                <div class="opportunity-content">
+                    <div class="opportunity-header">
+                        <h3 class="opportunity-title">${escapeHtml(opp.title || 'Untitled')}</h3>
+                        ${opp.typeOfSetAside
+                            ? `<span class="set-aside-badge">${escapeHtml(opp.typeOfSetAside)}</span>`
+                            : '<span class="set-aside-badge open">Open</span>'}
+                    </div>
+                    ${opp.solicitationNumber ? `<div class="opportunity-solicitation">${escapeHtml(opp.solicitationNumber)}</div>` : ''}
 
-    html += '</div>';
-    resultsContent.innerHTML = html;
-    resultsSection.classList.remove('hidden');
+                    <div class="opportunity-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Type:</span>
+                            <span class="detail-value">${escapeHtml(opp.type || opp.baseType || '-')}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">NAICS:</span>
+                            <span class="detail-value">${escapeHtml(opp.naicsCodes || '-')}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">PSC:</span>
+                            <span class="detail-value">${escapeHtml(opp.pscCode || '-')}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Posted:</span>
+                            <span class="detail-value">${posted}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Deadline:</span>
+                            <span class="detail-value deadline">${deadline}</span>
+                        </div>
+                        <div class="detail-row" style="grid-column: span 2;">
+                            <span class="detail-label">Agency:</span>
+                            <span class="detail-value">${escapeHtml(opp.fullParentPathName || '-')}</span>
+                        </div>
+                    </div>
+
+                    ${opp.uiLink ? `<a href="${escapeHtml(opp.uiLink)}" target="_blank" class="view-link">View on SAM.gov →</a>` : ''}
+                </div>
+
+                <div class="opportunity-actions">
+                    <div class="revealed-data" id="award-${index}">
+                        <span class="data-label">Award Amount</span>
+                        <span class="data-value ${isRevealed ? '' : 'pending'}" id="award-value-${index}">$${awardAmount}</span>
+                    </div>
+                    <div class="revealed-data" id="zip-${index}">
+                        <span class="data-label">Location ZIP</span>
+                        <span class="data-value ${isRevealed ? '' : 'pending'}" id="zip-value-${index}">${locationZip}</span>
+                    </div>
+                    <button type="button"
+                            class="btn-reveal-details ${isRevealed ? 'revealed' : ''}"
+                            id="reveal-btn-${index}"
+                            onclick="revealDetails(${index})"
+                            ${isRevealed ? 'disabled' : ''}>
+                        ${isRevealed ? '✓ Revealed' : '🔍 Reveal Details'}
+                    </button>
+                    <small style="color: #6c757d; font-size: 11px; text-align: center;">Uses 1 API call</small>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div>`;
+    opportunitiesContent.innerHTML = html;
 }
 
-// Dedicated webhook URL for score calculation
-const SCORE_WEBHOOK_URL = 'https://hook.us2.make.com/mgc2n9nvbpwi2bnv3n4g5i4q4jvydm5g';
+// ========== REVEAL DETAILS ==========
 
-// Calculate match score for a single opportunity
-async function calculateMatchScore(index) {
+async function revealDetails(index) {
+    if (!canMakeApiCall()) {
+        alert('You have used all 10 daily API calls. Please try again tomorrow.');
+        return;
+    }
+
     const opportunity = window.currentOpportunities[index];
     if (!opportunity) {
         console.error('Opportunity not found');
         return;
     }
 
-    const scoreDisplay = document.getElementById(`score-${index}`);
-    const button = scoreDisplay.parentElement.querySelector('.btn-calculate-score');
+    const button = document.getElementById(`reveal-btn-${index}`);
+    const awardValueEl = document.getElementById(`award-value-${index}`);
+    const zipValueEl = document.getElementById(`zip-value-${index}`);
 
     // Show loading state
     button.disabled = true;
-    button.textContent = '⏳ Calculating...';
-    scoreDisplay.querySelector('.score-value').textContent = '...';
+    button.textContent = '⏳ Revealing...';
 
-    // Build flat payload for score calculation
+    // Build payload
     const payload = {
-        action: 'calculate_score',
+        action: 'reveal_details',
         timestamp: new Date().toISOString(),
-
-        // Opportunity fields (flattened with opp_ prefix)
         opp_noticeId: opportunity.noticeId || '',
         opp_title: opportunity.title || '',
         opp_solicitationNumber: opportunity.solicitationNumber || '',
@@ -492,29 +498,13 @@ async function calculateMatchScore(index) {
         opp_pocFullName: opportunity.pocFullName || '',
         opp_pocEmail: opportunity.pocEmail || '',
         opp_pocPhone: opportunity.pocPhone || '',
-        opp_uiLink: opportunity.uiLink || '',
-
-        // Rankings (flattened)
-        location_rank: parseInt(document.getElementById('locationRank').value),
-        value_rank: parseInt(document.getElementById('valueRank').value),
-        feasibility_rank: parseInt(document.getElementById('feasibilityRank').value),
-        effort_rank: parseInt(document.getElementById('effortRank').value),
-        special_rank: parseInt(document.getElementById('specialRank').value),
-
-        // User preferences (flattened)
-        company_zip: document.getElementById('companyZip').value.trim(),
-        max_distance: parseInt(document.getElementById('maxDistance').value),
-        min_value: parseInt(document.getElementById('minValue').value),
-        bid_comfort_days: parseInt(document.getElementById('bidComfortDays').value),
-        special_request: document.getElementById('specialRequest').value.trim()
+        opp_uiLink: opportunity.uiLink || ''
     };
 
     try {
-        const response = await fetch(SCORE_WEBHOOK_URL, {
+        const response = await fetch(REVEAL_WEBHOOK_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
@@ -524,36 +514,50 @@ async function calculateMatchScore(index) {
 
         const result = await response.json();
 
-        // Update score display
-        if (result.match_score !== undefined) {
-            scoreDisplay.querySelector('.score-value').textContent = result.match_score;
-            scoreDisplay.classList.add('has-score');
+        // Increment API call counter
+        incrementApiCallCount();
 
-            // Color code based on score
-            const scoreValue = parseFloat(result.match_score);
-            if (scoreValue >= 80) {
-                scoreDisplay.classList.add('score-high');
-            } else if (scoreValue >= 50) {
-                scoreDisplay.classList.add('score-medium');
-            } else {
-                scoreDisplay.classList.add('score-low');
-            }
-        } else {
-            scoreDisplay.querySelector('.score-value').textContent = result.score || 'N/A';
+        // Update display with revealed data
+        if (result.award_amount !== undefined) {
+            const formattedAmount = typeof result.award_amount === 'number'
+                ? result.award_amount.toLocaleString()
+                : result.award_amount;
+            awardValueEl.textContent = `$${formattedAmount}`;
+            awardValueEl.classList.remove('pending');
+            opportunity._awardAmount = formattedAmount;
         }
 
-        button.textContent = '✓ Scored';
-        button.disabled = true;
+        if (result.location_zip) {
+            zipValueEl.textContent = result.location_zip;
+            zipValueEl.classList.remove('pending');
+            opportunity._locationZip = result.location_zip;
+        }
+
+        // Mark as revealed
+        opportunity._revealed = true;
+        button.textContent = '✓ Revealed';
+        button.classList.add('revealed');
+
+        // Save updated opportunities to localStorage
+        const userEmail = mainEmailInput.value.trim() || localStorage.getItem('samgov_user_email');
+        if (userEmail) {
+            localStorage.setItem(`samgov_opportunities_${userEmail}`, JSON.stringify(window.currentOpportunities));
+        }
 
     } catch (error) {
-        console.error('Score calculation error:', error);
-        scoreDisplay.querySelector('.score-value').textContent = 'Error';
+        console.error('Reveal details error:', error);
+        awardValueEl.textContent = 'Error';
+        zipValueEl.textContent = 'Error';
         button.textContent = '↻ Retry';
         button.disabled = false;
     }
 }
 
-// Helper function to format dates
+// Make revealDetails available globally
+window.revealDetails = revealDetails;
+
+// ========== HELPER FUNCTIONS ==========
+
 function formatDate(dateString) {
     if (!dateString) return '-';
     try {
@@ -564,7 +568,6 @@ function formatDate(dateString) {
     }
 }
 
-// Helper function to escape HTML to prevent XSS
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -572,100 +575,88 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Handle form submission
+// ========== FORM SUBMISSION ==========
+
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    // Validate email
+
     const userEmail = document.getElementById('userEmail').value.trim();
     if (!userEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)) {
         showStatus('error', 'Please enter a valid email address');
         return;
     }
-    
-    // Validate ZIP code
+
     const zipCode = document.getElementById('companyZip').value.trim();
     if (!/^\d{5}$/.test(zipCode)) {
         showStatus('error', 'Please enter a valid 5-digit ZIP code');
         return;
     }
-    
-    // Validate NAICS codes
+
     const naics = document.getElementById('naicsCodes').value.trim();
     if (!naics) {
         showStatus('error', 'Please enter at least one NAICS code');
         return;
     }
-    
-    // Collect form data
+
     const { webhookUrl, payload } = collectFormData();
-    
-    // Validate webhook URL
+
     if (!webhookUrl || !webhookUrl.startsWith('http')) {
         showStatus('error', 'Please enter a valid Make.com webhook URL');
         return;
     }
-    
-    // Show loading state
-    showStatus('loading', 'Processing your search...');
+
+    showStatus('loading', 'Searching for opportunities...');
     submitBtn.disabled = true;
-    resultsSection.classList.add('hidden');
-    
-    // Log payload for debugging
-    console.log('Sending payload:', payload);
-    
-    // Send to Make.com
+
     const result = await sendToMakecom(webhookUrl, payload);
-    
-    // Handle response
+
     submitBtn.disabled = false;
-    
+
     if (result.success) {
-        showStatus('success', 'Search completed successfully! ✨');
+        // Close modal
+        closeSearchModal();
+
+        // Sync email to main page
+        mainEmailInput.value = userEmail;
+        localStorage.setItem('samgov_user_email', userEmail);
+
+        showStatus('success', 'Search completed! ✨');
         setTimeout(() => hideStatus(), 3000);
-        displayResults(result.data);
+
+        // Process and display results
+        const opportunities = result.data.opportunities || result.data.matches || (Array.isArray(result.data) ? result.data : null);
+
+        if (opportunities && opportunities.length > 0) {
+            // Save opportunities to localStorage
+            localStorage.setItem(`samgov_opportunities_${userEmail}`, JSON.stringify(opportunities));
+            displayOpportunities(opportunities);
+        } else {
+            opportunitiesContent.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <p style="color: #28a745; font-weight: 600; margin-bottom: 10px;">✅ Search completed!</p>
+                    <p style="color: #6c757d;">${result.data.message || 'No matching opportunities found. Try adjusting your criteria.'}</p>
+                </div>
+            `;
+        }
     } else {
         showStatus('error', `Error: ${result.error}`);
     }
 });
 
-// Initialize on load
-document.addEventListener('DOMContentLoaded', () => {
-    initializeRanking();
+// ========== RANKING SYSTEM ==========
 
-    // Load saved webhook URL
-    const savedUrl = localStorage.getItem('samgov_webhook_url');
-    if (savedUrl) {
-        document.getElementById('webhookUrl').value = savedUrl;
-    }
-    
-    // Load saved user email
-    const savedEmail = localStorage.getItem('samgov_user_email');
-    if (savedEmail) {
-        document.getElementById('userEmail').value = savedEmail;
-    }
-    
-    // Load saved company ZIP
-    const savedZip = localStorage.getItem('samgov_company_zip');
-    if (savedZip) {
-        document.getElementById('companyZip').value = savedZip;
-    }
-});
-
-// Initialize ranking UI
 function initializeRanking() {
     const container = document.getElementById('rankingContainer');
-    
-    // Sort items by rank
+    if (!container) return;
+
     rankingItems.sort((a, b) => a.rank - b.rank);
-    
-    // Render ranking items
+
     rankingItems.forEach((item, index) => {
         const rankItem = document.createElement('div');
         rankItem.className = 'ranking-item';
         rankItem.draggable = true;
         rankItem.dataset.id = item.id;
-        
+
         rankItem.innerHTML = `
             <div class="ranking-number">${index + 1}</div>
             <div class="ranking-icon">${item.icon}</div>
@@ -674,16 +665,15 @@ function initializeRanking() {
                 <div class="ranking-description">${item.description}</div>
             </div>
         `;
-        
-        // Drag events
+
         rankItem.addEventListener('dragstart', handleDragStart);
         rankItem.addEventListener('dragover', handleDragOver);
         rankItem.addEventListener('drop', handleDrop);
         rankItem.addEventListener('dragend', handleDragEnd);
-        
+
         container.appendChild(rankItem);
     });
-    
+
     updateRankingInputs();
 }
 
@@ -696,27 +686,23 @@ function handleDragStart(e) {
 }
 
 function handleDragOver(e) {
-    if (e.preventDefault) {
-        e.preventDefault();
-    }
+    e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    
+
     const afterElement = getDragAfterElement(e.currentTarget.parentElement, e.clientY);
     const dragging = document.querySelector('.dragging');
-    
+
     if (afterElement == null) {
         e.currentTarget.parentElement.appendChild(dragging);
     } else {
         e.currentTarget.parentElement.insertBefore(dragging, afterElement);
     }
-    
+
     return false;
 }
 
 function handleDrop(e) {
-    if (e.stopPropagation) {
-        e.stopPropagation();
-    }
+    e.stopPropagation();
     updateRankingNumbers();
     updateRankingInputs();
     return false;
@@ -728,11 +714,11 @@ function handleDragEnd(e) {
 
 function getDragAfterElement(container, y) {
     const draggableElements = [...container.querySelectorAll('.ranking-item:not(.dragging)')];
-    
+
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
         const offset = y - box.top - box.height / 2;
-        
+
         if (offset < 0 && offset > closest.offset) {
             return { offset: offset, element: child };
         } else {
@@ -744,8 +730,7 @@ function getDragAfterElement(container, y) {
 function updateRankingNumbers() {
     const items = document.querySelectorAll('.ranking-item');
     items.forEach((item, index) => {
-        const numberEl = item.querySelector('.ranking-number');
-        numberEl.textContent = index + 1;
+        item.querySelector('.ranking-number').textContent = index + 1;
     });
 }
 
@@ -754,11 +739,13 @@ function updateRankingInputs() {
     items.forEach((item, index) => {
         const id = item.dataset.id;
         const rank = index + 1;
-        document.getElementById(`${id}Rank`).value = rank;
+        const input = document.getElementById(`${id}Rank`);
+        if (input) input.value = rank;
     });
 }
 
-// Save webhook URL and ZIP to localStorage
+// ========== SAVE TO LOCALSTORAGE ==========
+
 document.getElementById('webhookUrl').addEventListener('blur', (e) => {
     if (e.target.value) {
         localStorage.setItem('samgov_webhook_url', e.target.value);
@@ -774,5 +761,31 @@ document.getElementById('userEmail').addEventListener('blur', (e) => {
 document.getElementById('companyZip').addEventListener('blur', (e) => {
     if (e.target.value) {
         localStorage.setItem('samgov_company_zip', e.target.value);
+    }
+});
+
+// ========== INITIALIZE ON LOAD ==========
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializeRanking();
+    updateApiCounterDisplay();
+
+    // Load saved webhook URL
+    const savedUrl = localStorage.getItem('samgov_webhook_url');
+    if (savedUrl) {
+        document.getElementById('webhookUrl').value = savedUrl;
+    }
+
+    // Load saved user email
+    const savedEmail = localStorage.getItem('samgov_user_email');
+    if (savedEmail) {
+        document.getElementById('userEmail').value = savedEmail;
+        mainEmailInput.value = savedEmail;
+    }
+
+    // Load saved company ZIP
+    const savedZip = localStorage.getItem('samgov_company_zip');
+    if (savedZip) {
+        document.getElementById('companyZip').value = savedZip;
     }
 });
