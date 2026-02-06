@@ -1124,6 +1124,16 @@ footer {
     animation: spin 1s linear infinite;
 }
 
+/* Unknown Value Styling */
+.unknown-value {
+    color: #856404;
+    background: #fff3cd;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
 /* Opportunity Cards */
 .opportunities-cards {
     display: flex;
