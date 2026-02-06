@@ -804,7 +804,7 @@ function displayOpportunities(opportunities) {
 // ========== CLIENT-SIDE FILTERING ==========
 
 function filterOpportunitiesByPreferences(opportunities, criteria) {
-    """
+    /*
     Filter opportunities based on user preferences
     
     criteria object should contain:
@@ -817,7 +817,7 @@ function filterOpportunitiesByPreferences(opportunities, criteria) {
     - bid_comfort_days: days available to prepare bid
     - min_days: minimum days until deadline
     - special_request: custom rules (text)
-    """
+    */
     
     if (!opportunities || !Array.isArray(opportunities)) {
         return [];
