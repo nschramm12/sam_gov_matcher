@@ -330,15 +330,6 @@
                             <small>Awarded contracts are useful for competitive intelligence</small>
                         </div>
 
-                        <!-- Require Location Toggle -->
-                        <div class="form-group">
-                            <label class="toggle-label">
-                                <input type="checkbox" name="require_location" id="requireLocation">
-                                <span class="toggle-switch"></span>
-                                <span>Only show opportunities with location data</span>
-                            </label>
-                            <small>Ensures distance scoring will work immediately</small>
-                        </div>
 
                         <!-- Special Requests / Custom Rules -->
                         <div class="form-group">
@@ -417,8 +408,8 @@
     </div>
 
     <!-- Welcome/Directions Modal -->
+    <div class="welcome-overlay" id="welcomeOverlay"></div>
     <div id="welcomeModal" class="welcome-modal">
-        <div class="welcome-overlay" id="welcomeOverlay"></div>
         <div class="welcome-content">
             <div class="welcome-header">
                 <h2>👋 Welcome to SAM.gov Matcher!</h2>
@@ -446,8 +437,8 @@
                     <div class="welcome-step">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h4>🔓 Reveal Details</h4>
-                            <p>Click "Reveal Missing" on any opportunity to extract award amount and location from the description.</p>
+                            <h4>🎯 Smart Filtering</h4>
+                            <p>Your preferences are automatically applied to filter opportunities by NAICS codes, set-asides, deadline, and contract value.</p>
                         </div>
                     </div>
 

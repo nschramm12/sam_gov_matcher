@@ -44,7 +44,7 @@ When the user submits the form, the website sends this JSON payload to your Make
 
 | Field | Type | Required | Format | Purpose |
 |-------|------|----------|--------|---------|
-| `company_zip` | String | ✅ Yes | "92019" (5 digits) | Company location for distance calculation |
+| `company_zip` | String | ✅ Yes | "92019" (5 digits) | Company location |
 | `naics_filter` | String | ✅ Yes | "238220,236220" (comma-separated) | NAICS codes company bids on |
 | `psc_filter` | String | ⚠️ Optional | "J041,J045" (comma-separated) | Product/Service codes (empty string if not specified) |
 | `acceptable_set_asides` | String | ✅ Yes | "NONE,SBA,SDVOSBC" (comma-separated) | Business qualifications |
@@ -119,41 +119,22 @@ In subsequent modules, reference payload fields as:
 
 ```
 1. Webhooks: Custom Webhook
-   └─ Receives all user preferences
+   └─ Receives user preferences (company_zip, naics_filter, psc_filter, etc.)
    ↓
 2. Google Sheets: Search Rows (CurrentOpportunities)
    └─ Get all active opportunities
    ↓
-3. Filter Module: Basic Filters
-   ├─ Deadline >= addDays(now; {{1.min_days}})
-   ├─ Award status check ({{1.include_awarded}})
-   ├─ Location check ({{1.require_location}})
-   └─ Set-aside check ({{1.acceptable_set_asides}})
-   ↓
-4. HTTP: Google Distance Matrix API
-   └─ Calculate distance from {{1.company_zip}} to opportunity ZIP
-   ↓
-5. Set Variables: Extract Distance
-   └─ distance_miles, location_proximity
-   ↓
-6. Filter: Distance Check
-   └─ {{distance_miles}} <= {{1.max_distance}}
-   ↓
-7. Router
-   ├─→ Branch 1: Needs AI Enrichment (bundle ≤ 9)
-   │   ├─ HTTP: Fetch description
-   │   ├─ AI Agent: Extract values, dates, etc.
-   │   └─ Set Variables: Store extracted data
-   │
-   └─→ Branch 2: Already Enriched or Python Matcher
-       └─ Python Code: Calculate scores
-   ↓
-8. [OPTIONAL] AI Agent: Apply Special Request
-   └─ Filter opportunities based on {{1.special_request}}
-   ↓
-9. Google Sheets: Add Rows (MatchedOpportunities)
-   └─ Write final matches
+3. Return opportunities array as JSON
+   └─ Client-side JavaScript handles all filtering
 ```
+
+**Note:** All filtering now happens **client-side in JavaScript**:
+- Deadline filtering (min_days)
+- NAICS code filtering
+- PSC code filtering
+- Set-aside type filtering
+- Award amount filtering (min_value)
+- Results display with award amount and location ZIP already visible
 
 ---
 
@@ -216,15 +197,13 @@ Add a `custom_rule_score` field:
 - NAICS: 238220
 - PSC: J041, J045
 - Set-Asides: Open + SBA
-- Max Distance: 200 miles
 - Min Value: $50,000
 - Bid Comfort: 14 days
 - Min Days: 7
 
 **Expected Output:**
-- Estimated Opportunities: ~34
-- Within Distance: ~12
-- Processing Time: ~2 min
+- Opportunities matching all filters displayed with award amount and location
+- Processing Time: ~1 second (client-side filtering)
 
 ---
 
@@ -235,15 +214,13 @@ Add a `custom_rule_score` field:
 - NAICS: 236220, 237310
 - PSC: (blank)
 - Set-Asides: Open + SBA + 8(a)
-- Max Distance: 1000 miles
 - Min Value: $150,000
 - Bid Comfort: 21 days
 - Min Days: 14
 
 **Expected Output:**
-- Estimated Opportunities: ~18
-- Within Distance: ~12
-- Processing Time: ~1 min
+- Opportunities matching all filters displayed
+- Processing Time: ~1 second (client-side filtering)
 
 ---
 

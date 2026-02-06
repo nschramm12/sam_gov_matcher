@@ -47,11 +47,8 @@ const minValueDisplay = document.getElementById('minValueDisplay');
 const bidComfortSlider = document.getElementById('bidComfortDays');
 const bidComfortValue = document.getElementById('bidComfortDaysValue');
 
-// Webhook URL for search (calls SAM.gov API and returns filtered opportunities)
+// Webhook URL for search (returns currentOpportunities array)
 const SEARCH_WEBHOOK_URL = 'https://hook.us2.make.com/7yugrm1u8aoeoxy6n7mka7613kojavew';
-
-// Webhook URL for revealing details (extracts award amount & ZIP from description)
-const REVEAL_WEBHOOK_URL = 'https://hook.us2.make.com/mgc2n9nvbpwi2bnv3n4g5i4q4jvydm5g';
 
 // API Call Counter (10 per day)
 const MAX_DAILY_CALLS = 10;
@@ -79,7 +76,6 @@ const DEFAULTS = {
     bid_comfort_days: 14,
     min_days: 7,
     include_awarded: false,
-    require_location: false,
     special_request: '',
     rankings: { value: 1, feasibility: 2, location: 3, special: 4, effort: 5 }
 };
@@ -88,6 +84,7 @@ const DEFAULTS = {
 
 function showWelcomeModal() {
     welcomeModal.classList.remove('hidden');
+    welcomeOverlay.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 }
 
@@ -97,6 +94,7 @@ function hideWelcomeModal() {
         localStorage.setItem('samgov_hide_welcome', 'true');
     }
     welcomeModal.classList.add('hidden');
+    welcomeOverlay.classList.add('hidden');
     document.body.style.overflow = '';
 }
 
@@ -106,6 +104,7 @@ function checkShowWelcome() {
         showWelcomeModal();
     } else {
         welcomeModal.classList.add('hidden');
+        welcomeOverlay.classList.add('hidden');
     }
 }
 
@@ -570,7 +569,6 @@ if (resetBtn) resetBtn.addEventListener('click', () => {
     });
 
     document.getElementById('includeAwarded').checked = DEFAULTS.include_awarded;
-    document.getElementById('requireLocation').checked = DEFAULTS.require_location;
     document.getElementById('specialRequest').value = DEFAULTS.special_request;
 });
 
@@ -607,9 +605,6 @@ function loadSearchSettings(data) {
 
     if (data.include_awarded !== undefined) {
         document.getElementById('includeAwarded').checked = data.include_awarded;
-    }
-    if (data.require_location !== undefined) {
-        document.getElementById('requireLocation').checked = data.require_location;
     }
     if (data.special_request !== undefined) {
         document.getElementById('specialRequest').value = data.special_request;
@@ -664,7 +659,6 @@ function collectFormData() {
         effort_rank: parseInt(formData.get('effort_rank')),
         special_rank: parseInt(formData.get('special_rank')),
         include_awarded: document.getElementById('includeAwarded').checked,
-        require_location: document.getElementById('requireLocation').checked,
         special_request: formData.get('special_request').trim(),
         search_timestamp: new Date().toISOString()
     };
@@ -735,66 +729,44 @@ function displayOpportunities(opportunities) {
     html += `<div class="opportunities-cards">`;
 
     opportunities.forEach((opp, index) => {
-        const deadline = opp.responseDeadline ? formatDate(opp.responseDeadline) : '-';
-        const posted = opp.postedDate ? formatDate(opp.postedDate) : '-';
-
-        // Check for existing values from search results OR previously revealed
-        const hasAwardAmount = opp.award_amount != null || opp.awardAmount != null || opp._awardAmount != null;
-        const hasLocationZip = opp.popZIP != null || opp.location_zip != null || opp.locationZip != null || opp._locationZip != null;
-
-        // Get the actual values
-        const awardAmount = opp._awardAmount || opp.award_amount || opp.awardAmount;
-        const locationZip = opp._locationZip || opp.location_zip || opp.locationZip || opp.popZIP;
+        const deadline = opp.response_deadline ? formatDate(opp.response_deadline) : '-';
+        const posted = opp.posted_date ? formatDate(opp.posted_date) : '-';
 
         // Format award amount for display
         let awardDisplay = '--';
-        let awardHasValue = false;
-        if (awardAmount != null && awardAmount !== '' && awardAmount !== 'null') {
-            const numAmount = typeof awardAmount === 'number' ? awardAmount : parseFloat(awardAmount);
+        if (opp.award_amount != null && opp.award_amount !== '' && opp.award_amount !== 'null') {
+            const numAmount = typeof opp.award_amount === 'number' ? opp.award_amount : parseFloat(opp.award_amount);
             if (!isNaN(numAmount)) {
                 awardDisplay = numAmount.toLocaleString();
-                awardHasValue = true;
-            } else {
-                awardDisplay = awardAmount; // Keep string value
-                awardHasValue = true;
             }
         }
 
-        // Format ZIP for display
-        let zipDisplay = '--';
-        let zipHasValue = false;
-        if (locationZip != null && locationZip !== '' && locationZip !== 'null') {
-            zipDisplay = locationZip;
-            zipHasValue = true;
-        }
-
-        // Determine if reveal is needed (missing at least one value)
-        const needsReveal = !awardHasValue || !zipHasValue;
-        const isFullyRevealed = opp._revealed === true || (awardHasValue && zipHasValue);
+        // Get location ZIP
+        const locationZip = opp.place_of_performance_zip || '-';
 
         html += `
             <div class="opportunity-card" data-index="${index}">
                 <div class="opportunity-content">
                     <div class="opportunity-header">
                         <h3 class="opportunity-title">${escapeHtml(opp.title || 'Untitled')}</h3>
-                        ${opp.typeOfSetAside
-                            ? `<span class="set-aside-badge">${escapeHtml(opp.typeOfSetAside)}</span>`
+                        ${opp.type_of_set_aside_description
+                            ? `<span class="set-aside-badge">${escapeHtml(opp.type_of_set_aside_description)}</span>`
                             : '<span class="set-aside-badge open">Open</span>'}
                     </div>
-                    ${opp.solicitationNumber ? `<div class="opportunity-solicitation">${escapeHtml(opp.solicitationNumber)}</div>` : ''}
+                    ${opp.solicitation_number ? `<div class="opportunity-solicitation">${escapeHtml(opp.solicitation_number)}</div>` : ''}
 
                     <div class="opportunity-details">
                         <div class="detail-row">
                             <span class="detail-label">Type:</span>
-                            <span class="detail-value">${escapeHtml(opp.type || opp.baseType || '-')}</span>
+                            <span class="detail-value">${escapeHtml(opp.type || opp.base_type || '-')}</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">NAICS:</span>
-                            <span class="detail-value">${escapeHtml(opp.naicsCodes || '-')}</span>
+                            <span class="detail-value">${escapeHtml(opp.naics_codes || '-')}</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">PSC:</span>
-                            <span class="detail-value">${escapeHtml(opp.pscCode || '-')}</span>
+                            <span class="detail-value">${escapeHtml(opp.classification_code || '-')}</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Posted:</span>
@@ -806,32 +778,20 @@ function displayOpportunities(opportunities) {
                         </div>
                         <div class="detail-row" style="grid-column: span 2;">
                             <span class="detail-label">Agency:</span>
-                            <span class="detail-value">${escapeHtml(opp.fullParentPathName || '-')}</span>
+                            <span class="detail-value">${escapeHtml(opp.full_parent_path_name || '-')}</span>
                         </div>
                     </div>
 
-                    ${opp.uiLink ? `<a href="${escapeHtml(opp.uiLink)}" target="_blank" class="view-link">View on SAM.gov →</a>` : ''}
-                </div>
+                    <div class="detail-row" style="margin-top: 15px;">
+                        <span class="detail-label">Award Amount:</span>
+                        <span class="detail-value">${awardDisplay !== '--' ? '$' + awardDisplay : awardDisplay}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Location ZIP:</span>
+                        <span class="detail-value">${locationZip}</span>
+                    </div>
 
-                <div class="opportunity-actions">
-                    <div class="revealed-data" id="award-${index}">
-                        <span class="data-label">Award Amount</span>
-                        <span class="data-value ${awardHasValue ? '' : 'pending'}" id="award-value-${index}">${awardHasValue ? '$' + awardDisplay : '--'}</span>
-                    </div>
-                    <div class="revealed-data" id="zip-${index}">
-                        <span class="data-label">Location ZIP</span>
-                        <span class="data-value ${zipHasValue ? '' : 'pending'}" id="zip-value-${index}">${zipDisplay}</span>
-                    </div>
-                    ${needsReveal ? `
-                        <button type="button"
-                                class="btn-reveal-details"
-                                id="reveal-btn-${index}"
-                                onclick="revealDetails(${index})">
-                            🔍 Reveal Missing
-                        </button>
-                    ` : `
-                        <div style="color: #28a745; font-size: 13px; font-weight: 600;">✓ Complete</div>
-                    `}
+                    ${opp.ui_link ? `<a href="${escapeHtml(opp.ui_link)}" target="_blank" class="view-link">View on SAM.gov →</a>` : ''}
                 </div>
             </div>
         `;
@@ -841,126 +801,78 @@ function displayOpportunities(opportunities) {
     opportunitiesContent.innerHTML = html;
 }
 
-// ========== REVEAL DETAILS ==========
+// ========== CLIENT-SIDE FILTERING ==========
 
-async function revealDetails(index) {
-    const opportunity = window.currentOpportunities[index];
-    if (!opportunity) {
-        console.error('Opportunity not found');
-        return;
+function filterOpportunitiesByPreferences(opportunities, criteria) {
+    """
+    Filter opportunities based on user preferences
+    
+    criteria object should contain:
+    - company_zip: user's ZIP code
+    - naics_filter: comma-separated NAICS codes
+    - psc_filter: comma-separated PSC codes (optional)
+    - acceptable_set_asides: comma-separated set-aside types
+    - max_distance: max miles from company ZIP
+    - min_value: minimum contract value
+    - bid_comfort_days: days available to prepare bid
+    - min_days: minimum days until deadline
+    - special_request: custom rules (text)
+    """
+    
+    if (!opportunities || !Array.isArray(opportunities)) {
+        return [];
     }
 
-    const button = document.getElementById(`reveal-btn-${index}`);
-    const awardValueEl = document.getElementById(`award-value-${index}`);
-    const zipValueEl = document.getElementById(`zip-value-${index}`);
+    const naicsList = criteria.naics_filter
+        ? criteria.naics_filter.split(',').map(n => n.trim())
+        : [];
+    const pscList = criteria.psc_filter
+        ? criteria.psc_filter.split(',').map(p => p.trim()).filter(p => p)
+        : [];
+    const setAsidesList = criteria.acceptable_set_asides
+        ? criteria.acceptable_set_asides.split(',').map(s => s.trim())
+        : ['NONE', 'SBA'];
+    
+    const maxDistance = parseInt(criteria.max_distance) || 1000;
+    const minValue = parseInt(criteria.min_value) || 0;
+    const bidComfortDays = parseInt(criteria.bid_comfort_days) || 14;
+    const minDaysUntilDeadline = parseInt(criteria.min_days) || 0;
+    
+    const now = new Date();
+    const deadlineThreshold = new Date(now.getTime() + minDaysUntilDeadline * 24 * 60 * 60 * 1000);
 
-    // Show loading state
-    button.disabled = true;
-    button.textContent = '⏳ Revealing...';
-
-    // Debug: Log the opportunity object to see all available fields
-    console.log('Opportunity object for reveal:', opportunity);
-    console.log('Available keys:', Object.keys(opportunity));
-
-    // Get noticeId - check multiple possible property names
-    const noticeId = opportunity.noticeId || opportunity.notice_id || opportunity.NoticeId ||
-                     opportunity.id || opportunity.opportunityId || opportunity.opportunity_id || '';
-
-    console.log('Extracted noticeId:', noticeId);
-
-    // Build payload
-    const payload = {
-        action: 'reveal_details',
-        timestamp: new Date().toISOString(),
-        opp_noticeId: noticeId,
-        opp_title: opportunity.title || opportunity.Title || '',
-        opp_solicitationNumber: opportunity.solicitationNumber || opportunity.solicitation_number || '',
-        opp_type: opportunity.type || opportunity.Type || '',
-        opp_baseType: opportunity.baseType || opportunity.base_type || '',
-        opp_typeOfSetAside: opportunity.typeOfSetAside || opportunity.type_of_set_aside || '',
-        opp_naicsCodes: opportunity.naicsCodes || opportunity.naics_codes || opportunity.naicsCode || '',
-        opp_pscCode: opportunity.pscCode || opportunity.psc_code || '',
-        opp_popZIP: opportunity.popZIP || opportunity.pop_zip || opportunity.placeOfPerformanceZip || '',
-        opp_postedDate: opportunity.postedDate || opportunity.posted_date || '',
-        opp_responseDeadline: opportunity.responseDeadline || opportunity.response_deadline || '',
-        opp_fullParentPathName: opportunity.fullParentPathName || opportunity.full_parent_path_name || opportunity.agency || '',
-        opp_pocFullName: opportunity.pocFullName || opportunity.poc_full_name || '',
-        opp_pocEmail: opportunity.pocEmail || opportunity.poc_email || '',
-        opp_pocPhone: opportunity.pocPhone || opportunity.poc_phone || '',
-        opp_uiLink: opportunity.uiLink || opportunity.ui_link || opportunity.link || ''
-    };
-
-    console.log('Reveal payload being sent:', payload);
-
-    try {
-        const response = await fetch(REVEAL_WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    return opportunities.filter(opp => {
+        // Check deadline
+        if (opp.response_deadline) {
+            const deadline = new Date(opp.response_deadline);
+            if (deadline < deadlineThreshold) return false;
         }
 
-        const result = await response.json();
-
-        // Update display with revealed data
-        // Handle award_amount - could be a value or null (not found by AI)
-        if (result.award_amount !== undefined) {
-            if (result.award_amount !== null && result.award_amount !== '' && result.award_amount !== 'null') {
-                const formattedAmount = typeof result.award_amount === 'number'
-                    ? result.award_amount.toLocaleString()
-                    : result.award_amount;
-                awardValueEl.textContent = `$${formattedAmount}`;
-                awardValueEl.classList.remove('pending');
-                awardValueEl.classList.add('found');
-                opportunity._awardAmount = formattedAmount;
-            } else {
-                // AI agent couldn't find it in description
-                awardValueEl.textContent = 'Not found';
-                awardValueEl.classList.remove('pending');
-                awardValueEl.classList.add('not-found');
-                opportunity._awardAmount = null;
-            }
+        // Check NAICS codes (if provided)
+        if (naicsList.length > 0 && opp.naics_codes) {
+            const oppNaics = opp.naics_codes.split(',').map(n => n.trim());
+            const hasMatch = oppNaics.some(n => naicsList.includes(n));
+            if (!hasMatch) return false;
         }
 
-        // Handle location_zip - could be a value or null (not found by AI)
-        if (result.location_zip !== undefined) {
-            if (result.location_zip !== null && result.location_zip !== '' && result.location_zip !== 'null') {
-                zipValueEl.textContent = result.location_zip;
-                zipValueEl.classList.remove('pending');
-                zipValueEl.classList.add('found');
-                opportunity._locationZip = result.location_zip;
-            } else {
-                // AI agent couldn't find it in description
-                zipValueEl.textContent = 'Not found';
-                zipValueEl.classList.remove('pending');
-                zipValueEl.classList.add('not-found');
-                opportunity._locationZip = null;
-            }
+        // Check PSC codes (if provided)
+        if (pscList.length > 0 && opp.classification_code) {
+            if (!pscList.includes(opp.classification_code)) return false;
         }
 
-        // Mark as revealed (attempted)
-        opportunity._revealed = true;
-        button.textContent = '✓ Checked';
-        button.classList.add('revealed');
-        button.disabled = true;
+        // Check set-asides
+        const setAside = opp.type_of_set_aside || 'NONE';
+        if (!setAsidesList.includes(setAside)) return false;
 
-        // Update current search in history with revealed data
-        updateCurrentSearchOpportunities(window.currentOpportunities);
+        // Check award amount (if available)
+        if (opp.award_amount) {
+            const amount = parseFloat(opp.award_amount);
+            if (amount < minValue) return false;
+        }
 
-    } catch (error) {
-        console.error('Reveal details error:', error);
-        awardValueEl.textContent = 'Error';
-        zipValueEl.textContent = 'Error';
-        button.textContent = '↻ Retry';
-        button.disabled = false;
-    }
+        return true;
+    });
 }
-
-// Make revealDetails available globally
-window.revealDetails = revealDetails;
 
 // ========== HELPER FUNCTIONS ==========
 
@@ -1030,67 +942,39 @@ form.addEventListener('submit', async (e) => {
         // Close modal
         closeSearchModal();
 
-        showStatus('success', 'Search completed! ✨');
+        showStatus('success', 'Filtering opportunities... ✨');
         setTimeout(() => hideStatus(), 3000);
 
-        // Debug: Log what we're looking for
-        console.log('Looking for opportunities in result.data:', result.data);
-        console.log('result.data.opportunities:', result.data?.opportunities);
-        console.log('result.data.matches:', result.data?.matches);
-        console.log('Is array?:', Array.isArray(result.data));
-
-        // Process and display results - check multiple possible response structures
-        let opportunities = null;
-
-        // Check if data itself is an array
+        // Get raw opportunities from webhook response
+        let rawOpportunities = null;
         if (Array.isArray(result.data)) {
-            opportunities = result.data;
-        }
-        // Check for nested opportunities array
-        else if (result.data?.opportunities && Array.isArray(result.data.opportunities)) {
-            opportunities = result.data.opportunities;
-        }
-        // Check for matches array
-        else if (result.data?.matches && Array.isArray(result.data.matches)) {
-            opportunities = result.data.matches;
-        }
-        // Check if data is an object with a results property
-        else if (result.data?.results && Array.isArray(result.data.results)) {
-            opportunities = result.data.results;
-        }
-        // Check if data is an object with a data property (nested)
-        else if (result.data?.data && Array.isArray(result.data.data)) {
-            opportunities = result.data.data;
+            rawOpportunities = result.data;
+        } else if (result.data?.opportunities && Array.isArray(result.data.opportunities)) {
+            rawOpportunities = result.data.opportunities;
+        } else if (result.data?.data && Array.isArray(result.data.data)) {
+            rawOpportunities = result.data.data;
         }
 
-        console.log('Extracted opportunities:', opportunities);
+        if (rawOpportunities && rawOpportunities.length > 0) {
+            // Apply client-side filtering based on user preferences
+            const filteredOpportunities = filterOpportunitiesByPreferences(rawOpportunities, payload);
 
-        // Save search to history (even if no results)
-        saveSearch({
-            criteria: payload,
-            opportunities: opportunities || []
-        });
+            // Save search to history
+            saveSearch({
+                criteria: payload,
+                opportunities: filteredOpportunities
+            });
 
-        if (opportunities && opportunities.length > 0) {
-            displayOpportunities(opportunities);
-        } else {
-            // Debug: Show what the API returned when no opportunities found
-            console.log('No opportunities array found. Full result.data:', JSON.stringify(result.data, null, 2));
-
-            // Try to provide helpful debug info
-            let debugInfo = '';
-            if (result.data && typeof result.data === 'object') {
-                const keys = Object.keys(result.data);
-                debugInfo = `<br><small style="color: #999;">Response keys: ${keys.join(', ') || 'none'}</small>`;
+            if (filteredOpportunities.length > 0) {
+                displayOpportunities(filteredOpportunities);
+            } else {
+                opportunitiesContent.innerHTML = `
+                    <p class="empty-state">No opportunities match your criteria. Try adjusting your preferences.</p>
+                `;
             }
-
+        } else {
             opportunitiesContent.innerHTML = `
-                <div style="text-align: center; padding: 40px;">
-                    <p style="color: #28a745; font-weight: 600; margin-bottom: 10px;">✅ Search completed!</p>
-                    <p style="color: #6c757d;">${result.data?.message || 'No matching opportunities found. Try adjusting your criteria.'}</p>
-                    ${debugInfo}
-                    <p style="margin-top: 15px; font-size: 12px; color: #999;">Check browser console (F12) for full response data.</p>
-                </div>
+                <p class="empty-state">No opportunities found. Try adjusting your criteria.</p>
             `;
         }
     } else {
