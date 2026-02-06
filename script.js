@@ -9,7 +9,6 @@ const loadSearchBtn = document.getElementById('loadSearchBtn');
 const deleteSearchBtn = document.getElementById('deleteSearchBtn');
 const newSearchBtn = document.getElementById('newSearchBtn');
 const dailyAlertBtn = document.getElementById('dailyAlertBtn');
-const apiCounterValue = document.getElementById('apiCounterValue');
 
 // DOM Elements - Daily Alert Modal
 const dailyAlertModal = document.getElementById('dailyAlertModal');
@@ -44,9 +43,6 @@ const minValueDisplay = document.getElementById('minValueDisplay');
 
 // Webhook URL for search (returns ALL opportunities as CSV)
 const SEARCH_WEBHOOK_URL = 'https://hook.us2.make.com/f99gee1v61qkaipf3qydt668lvh5qsb7';
-
-// API Call Counter (10 per day)
-const MAX_DAILY_CALLS = 10;
 
 // Default values
 const DEFAULTS = {
@@ -462,52 +458,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// ========== API COUNTER FUNCTIONS ==========
-
-function getApiCallCount() {
-    const today = new Date().toDateString();
-    const savedDate = localStorage.getItem('samgov_api_calls_date');
-    const savedCount = parseInt(localStorage.getItem('samgov_api_calls_count') || '0');
-
-    // Reset if it's a new day
-    if (savedDate !== today) {
-        localStorage.setItem('samgov_api_calls_date', today);
-        localStorage.setItem('samgov_api_calls_count', '0');
-        return 0;
-    }
-
-    return savedCount;
-}
-
-function incrementApiCallCount() {
-    const today = new Date().toDateString();
-    localStorage.setItem('samgov_api_calls_date', today);
-    const currentCount = getApiCallCount();
-    const newCount = currentCount + 1;
-    localStorage.setItem('samgov_api_calls_count', newCount.toString());
-    updateApiCounterDisplay();
-    return newCount;
-}
-
-function updateApiCounterDisplay() {
-    const usedCalls = getApiCallCount();
-    const remaining = MAX_DAILY_CALLS - usedCalls;
-    apiCounterValue.textContent = `${remaining}/${MAX_DAILY_CALLS}`;
-
-    // Change color based on remaining
-    if (remaining <= 2) {
-        apiCounterValue.style.color = '#dc3545';
-    } else if (remaining <= 5) {
-        apiCounterValue.style.color = '#ffc107';
-    } else {
-        apiCounterValue.style.color = '#856404';
-    }
-}
-
-function canMakeApiCall() {
-    return getApiCallCount() < MAX_DAILY_CALLS;
-}
-
 // ========== SLIDER EVENT LISTENERS ==========
 
 minDaysSlider.addEventListener('input', (e) => {
@@ -881,12 +831,6 @@ function escapeHtml(text) {
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // Check API call limit first
-    if (!canMakeApiCall()) {
-        showStatus('error', 'You have used all 10 daily searches. Please try again tomorrow.');
-        return;
-    }
-
     const userEmail = document.getElementById('userEmail').value.trim();
     if (!userEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)) {
         showStatus('error', 'Please enter a valid email address');
@@ -909,9 +853,6 @@ form.addEventListener('submit', async (e) => {
 
     // Fetch all opportunities from webhook
     const result = await fetchAllOpportunities();
-
-    // Increment API call counter after search attempt
-    incrementApiCallCount();
 
     submitBtn.disabled = false;
 
@@ -968,7 +909,6 @@ document.getElementById('companyZip').addEventListener('blur', (e) => {
 // ========== INITIALIZE ON LOAD ==========
 
 document.addEventListener('DOMContentLoaded', () => {
-    updateApiCounterDisplay();
     populateSearchDropdown();
 
     // Initialize daily alert button state

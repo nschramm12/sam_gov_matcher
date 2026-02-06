@@ -170,36 +170,6 @@ header h1 {
     cursor: not-allowed;
 }
 
-/* API Counter Row */
-.api-counter-row {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 25px;
-}
-
-/* API Counter */
-.api-counter {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 20px;
-    background: #fff3cd;
-    border: 2px solid #ffc107;
-    border-radius: 8px;
-}
-
-.api-counter-label {
-    font-size: 14px;
-    color: #856404;
-    font-weight: 500;
-}
-
-.api-counter-value {
-    font-size: 18px;
-    font-weight: 700;
-    color: #856404;
-}
-
 /* Opportunities Section */
 .opportunities-section {
     background: #f8f9fa;
@@ -828,15 +798,6 @@ footer {
 
     .modal-body {
         padding: 20px;
-    }
-
-    .api-counter {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .api-counter-row {
-        justify-content: center;
     }
 
     .search-history-row {
